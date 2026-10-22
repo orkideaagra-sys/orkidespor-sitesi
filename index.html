@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Orkide · Spor İletişim</title>
+<meta name="google-site-verification" content="zMNZDjifhIesob_o8TNpFi7V8YJ4-JWkOGSn_xl_65E" />
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#06161f;--panel:#0b2330;--panel2:#0f2f40;--line:#17435a;--text:#e6f3f1;--mute:#7fa3ab;--green:#22b98a;--green2:#16906a;--blue:#1d6f9c;--red:#e5586b}
@@ -80,7 +81,7 @@ input.f:focus,.row input:focus{border-color:var(--green)}
     <input class="f" id="pass" type="password" placeholder="Şifre (en az 6 karakter)" required minlength="6" autocomplete="current-password">
     <div class="err" id="err"></div>
     <button class="btn" id="authBtn">Giriş yap</button>
-    <button class="btn ghost" type="button" id="toggle">hesabın yok mu?  kayıt ol</button>
+    <button class="btn ghost" type="button" id="toggle">Hesabın yok mu? Kayıt ol</button>
     <button class="btn ghost hide" type="button" id="forgot">Şifremi unuttum</button>
     <div class="credit">HamzaStudios tarafından yapılmıştır</div>
   </form>
@@ -148,18 +149,18 @@ const LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABLAAAAZACAMAA
 // 1.2) OYUNCULAR: 14 oyuncunun bilgilerini buraya yaz. Sadece tırnak içindeki yerleri değiştir.
 // photo: istersen oyuncunun fotoğrafını base64 olarak ("data:image/jpeg;base64,...") yapıştırabilirsin.
 const PLAYERS = [
-  { name: "Umutcan Çan", position: "orta saha", team: "", number: "16", photo: "" },
-  { name: "Omur efe başaran", position: "defansif ortası", team: "", number: "09", photo: "" },
-  { name: "Yusuf aktaş", position: "sağ kanat", team: "", number: "19", photo: "" },
-  { name: "Ahmet kerem ulupınar", position: "defans", team: "", number: "05", photo: "" },
-  { name: "Ege nemli", position: "defansif ortası", team: "", number: "04", photo: "" },
-  { name: "Emirhan günal", position: "Kaleci", team: "", number: "01", photo: "" },
-  { name: "Gökdeniz güven", position: "forvet", team: "", number: "99", photo: "" },
-  { name: "Mirhan kılıç", position: "defans", team: "", number: "55", photo: "" },
-  { name: "Sarp Sevinç", position: "Ön liboru", team: "", number: "53", photo: "" },
-  { name: "Ege gökbudak", position: "Bilinmiyor.", team: "", number: "14", photo: "" },
-  { name: "Metehan kaya", position: "Merkezi orta saha", team: "", number: "10", photo: "" },
-  { name: "Oyuncu 12 Ad", position: "", team: "", number: "", photo: "" },
+  { name: "Umutcan Çanorta", position: "Saha", team: "", number: "16", photo: "" },
+  { name: "Omur Efe Başaran", position: "Defansif orta saha", team: "", number: "09", photo: "" },
+  { name: "Yusuf Aktaş", position: "Sağ kanat", team: "", number: "19", photo: "" },
+  { name: "Ahmet Kerem Ulupınar", position: "Defans", team: "", number: "05", photo: "" },
+  { name: "Ege Nemli", position: "Defansif orta saha", team: "", number: "04", photo: "" },
+  { name: "Emirhan Günal", position: "Kaleci", team: "", number: "01", photo: "" },
+  { name: "Gökdeniz Güven", position: "Forvet", team: "", number: "99", photo: "" },
+  { name: "Mirhan Kılıç", position: "Defans", team: "", number: "55", photo: "" },
+  { name: "Sarp Sevinç", position: "Ön libero", team: "", number: "53", photo: "" },
+  { name: "Ege Gökbudak", position: "", team: "", number: "14", photo: "" },
+  { name: "Metehan Kaya", position: "Merkezi orta saha", team: "", number: "10", photo: "" },
+  { name: "Oyuncu 12 Adı", position: "", team: "", number: "", photo: "" },
   { name: "Oyuncu 13 Adı", position: "", team: "", number: "", photo: "" },
   { name: "Oyuncu 14 Adı", position: "", team: "", number: "", photo: "" },
 ];
