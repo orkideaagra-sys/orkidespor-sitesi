@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orkide · Spor İletişim</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06161f;--panel:#0b2330;--panel2:#0f2f40;--line:#17435a;--text:#e6f3f1;--mute:#7fa3ab;--green:#22b98a;--green2:#16906a;--blue:#1d6f9c;--red:#e5586b}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;line-height:1.5}
+button,input,textarea{font:inherit;color:inherit}
+a{color:var(--green)}
+.app{display:grid;grid-template-columns:250px minmax(0,600px) 300px;justify-content:center;min-height:100vh}
+aside{padding:16px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 10px 14px;font-size:26px;font-weight:800}
+.brand img,.brand .logo{width:42px;height:42px;border-radius:12px;object-fit:cover;background:var(--green);display:grid;place-items:center;font-size:22px}
+.nav{background:none;border:0;text-align:left;padding:12px 16px;border-radius:999px;font-size:19px;cursor:pointer;font-weight:500}
+.nav:hover,.nav.on{background:var(--panel2)}
+.nav.on{font-weight:700;color:var(--green)}
+.btn{background:var(--green);color:#042;border:0;border-radius:999px;padding:10px 22px;font-weight:700;cursor:pointer}
+.btn:hover{background:#2fd1a0}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--text)}
+.btn:disabled{opacity:.5;cursor:default}
+main{border-left:1px solid var(--line);border-right:1px solid var(--line);min-height:100vh}
+.top{position:sticky;top:0;z-index:5;background:rgba(6,22,31,.88);backdrop-filter:blur(8px);padding:14px 18px;border-bottom:1px solid var(--line);font-size:20px;font-weight:700}
+.compose{display:flex;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));display:grid;place-items:center;font-weight:800;flex:none}
+.compose textarea{width:100%;background:none;border:0;outline:0;resize:none;font-size:19px;min-height:60px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.row input[type=url]{flex:1;min-width:160px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 14px;outline:0}
+.file{cursor:pointer;color:var(--green);font-weight:500}
+.post{display:flex;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.post:hover{background:#08202c}
+.pb{flex:1;min-width:0}
+.meta{color:var(--mute);font-size:15px}.meta b{color:var(--text)}
+.txt{white-space:pre-wrap;word-wrap:break-word;margin:4px 0 8px}
+video,iframe{width:100%;border-radius:16px;border:1px solid var(--line);background:#000;max-height:420px;aspect-ratio:16/9}
+.act{display:flex;gap:24px;margin-top:10px;color:var(--mute)}
+.act button{background:none;border:0;cursor:pointer;color:var(--mute);display:flex;gap:6px;align-items:center}
+.act button:hover{color:var(--green)}.act .liked{color:var(--red)}.act .del:hover{color:var(--red)}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;padding:18px}
+.pl{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;text-align:center}
+.pl .av{width:64px;height:64px;margin:0 auto 10px;font-size:24px}
+.pl small{color:var(--mute);display:block}
+.pl .num{color:var(--green);font-weight:800}
+.addp{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;padding:16px 18px;border-bottom:1px solid var(--line)}
+input.f{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:0;width:100%}
+input.f:focus,.row input:focus{border-color:var(--green)}
+.right{padding:16px;position:sticky;top:0;height:100vh}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.card h3{margin-bottom:6px}.card p{color:var(--mute);font-size:15px}
+.user{display:flex;align-items:center;gap:10px;margin-top:auto;padding:10px;border-radius:999px;background:var(--panel)}
+.user span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#auth{position:fixed;inset:0;background:radial-gradient(circle at 20% 10%,#0e4a5e 0,var(--bg) 55%);display:grid;place-items:center;z-index:20;padding:16px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:32px;width:100%;max-width:400px;display:grid;gap:12px}
+.box h1{font-size:30px}.box p{color:var(--mute)}
+.err{color:var(--red);font-size:14px;min-height:18px}
+.empty{padding:40px 18px;text-align:center;color:var(--mute)}
+.credit{font-size:14px;color:var(--mute);text-align:center;margin-top:8px}
+.hide{display:none!important}
+@media(max-width:1000px){.app{grid-template-columns:76px minmax(0,1fr)}.right{display:none}.nav span,.brand span,.user span{display:none}.nav{padding:12px;text-align:center}}
+@media(max-width:600px){.app{grid-template-columns:1fr;padding-bottom:64px}aside{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;flex-direction:row;justify-content:space-around;background:var(--panel);z-index:9;padding:6px;border-top:1px solid var(--line)}.brand,.user{display:none}main{border:0}}
+.cms{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}.cmt{padding:6px 0;font-size:15px}.cform{display:flex;gap:8px;margin-top:8px}.cform .btn{padding:8px 16px}
+.pbanner{padding:24px 18px;border-bottom:1px solid var(--line);display:grid;gap:10px}.pbanner .av{width:72px;height:72px;font-size:30px}
+.pbanner textarea{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;width:100%;min-height:70px;outline:0;resize:none}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<!-- GİRİŞ / KAYIT -->
+<div id="auth">
+  <form class="box" id="authForm">
+    <div class="brand" style="padding:0"><span class="logo" data-logo>🌷</span><span>Orkide</span></div>
+    <h1 id="authTitle">Giriş yap</h1>
+    <p>Spor dünyasının konuştuğu yer.</p>
+    <input class="f hide" id="uname" placeholder="Kullanıcı adı" maxlength="24" autocomplete="username">
+    <input class="f" id="email" type="email" placeholder="E-posta" required autocomplete="email">
+    <input class="f" id="pass" type="password" placeholder="Şifre (en az 6 karakter)" required minlength="6" autocomplete="current-password">
+    <div class="err" id="err"></div>
+    <button class="btn" id="authBtn">Giriş yap</button>
+    <button class="btn ghost" type="button" id="toggle">Hesabın yok mu? Kayıt ol</button>
+    <button class="btn ghost hide" type="button" id="forgot">Şifremi unuttum</button>
+    <div class="credit">HamzaStudios tarafından yapılmıştır</div>
+  </form>
+</div>
+
+<!-- UYGULAMA -->
+<div class="app" id="app">
+  <aside>
+    <div class="brand"><span class="logo" data-logo>🌷</span><span>Orkide</span></div>
+    <button class="nav on" data-view="home">🏠 <span>Ana Sayfa</span></button>
+    <button class="nav" data-view="players">⚽ <span>Oyuncular</span></button>
+    <button class="nav" data-view="profile">👤 <span>Profil</span></button>
+    <div class="user"><div class="av" id="meAv" style="width:36px;height:36px"></div><span id="meName"></span><button class="btn ghost" id="out" title="Çıkış" style="padding:6px 12px">↩</button></div>
+  </aside>
+
+  <main>
+    <section id="home">
+      <div class="top">Ana Sayfa</div>
+      <div class="compose">
+        <div class="av" id="cAv"></div>
+        <div style="flex:1">
+          <textarea id="text" maxlength="280" placeholder="Sporda neler oluyor?"></textarea>
+          <video id="prev" controls class="hide" style="margin-top:8px"></video>
+          <div class="row">
+            <label class="file">🎬 Video yükle<input type="file" id="vfile" accept="video/*" hidden></label>
+            <input type="url" id="vurl" placeholder="veya video / YouTube bağlantısı">
+            <span class="meta" id="cnt">0/280</span>
+            <button class="btn" id="send">Gönder</button>
+          </div>
+          <div class="err" id="perr"></div>
+        </div>
+      </div>
+      <div id="feed"><div class="empty">Yükleniyor…</div></div>
+    </section>
+
+    <section id="players" class="hide">
+      <div class="top">Oyuncular</div>
+      <form class="addp" id="pform">
+        <input class="f" id="pn" placeholder="Oyuncu adı" required maxlength="40">
+        <input class="f" id="pp" placeholder="Pozisyon" maxlength="30">
+        <input class="f" id="pt" placeholder="Takım" maxlength="30">
+        <input class="f" id="pnum" type="number" placeholder="Forma no" min="0" max="99">
+        <button class="btn">Oyuncu ekle</button>
+      </form>
+      <div class="players" id="plist"></div>
+    </section>
+    <section id="profile" class="hide">
+      <div class="top">Profil</div>
+      <div class="pbanner">
+        <div class="av" id="pAv"></div>
+        <div><b style="font-size:22px" id="pName"></b><div class="meta" id="pcount"></div></div>
+        <textarea id="bio" maxlength="160" placeholder="Kendini kısaca tanıt (en fazla 160 karakter)"></textarea>
+        <div class="row" style="margin:0"><button class="btn" id="saveBio">Kaydet</button><span class="meta" id="bioMsg"></span></div>
+      </div>
+      <div id="myfeed"></div>
+    </section>
+  </main>
+
+  <div class="right">
+    <div class="card"><input class="f" id="search" placeholder="Gönderi veya kişi ara"></div>
+    <div class="card"><h3>Orkide Spor İletişim</h3><p>Oyuncular, takımlar ve taraftarlar tek akışta buluşur. Gönderi yaz, video paylaş, oyuncuları keşfet.</p></div>
+    <div class="card"><p>Bu site <b style="color:var(--green)">HamzaStudios</b> tarafından yapılmıştır.</p></div>
+  </div>
+</div>
+
+<script type="module">
+/* ============ AYARLAR ============ */
+// 1) Logonu buraya base64 olarak yapıştır (data:image/png;base64,.... ile başlayan metin)
+const LOGO_BASE64 = "";
+
+// 1.5) Oyuncu ekleyip silebilecek yönetici e-postaları (Firestore kurallarındaki liste ile aynı olmalı)
+const ADMIN_EMAILS = ["senin@mail.com"];
+
+// 2) Firebase konsolundan aldığın ayarları buraya yaz
+const firebaseConfig = {
+  apiKey: "AIzaSyB1v4gDe2WNfL-ZkQBA7ytwdSZXwvGQMVA",
+  authDomain: "project-2144054113632047131.firebaseapp.com",
+  databaseURL: "https://project-2144054113632047131-default-rtdb.firebaseio.com",
+  projectId: "project-2144054113632047131",
+  storageBucket: "project-2144054113632047131.firebasestorage.app",
+  messagingSenderId: "552024282910",
+  appId: "1:552024282910:web:18125f36ebf43e6a345b0f",
+  measurementId: "G-K26JX8HDSM"
+};
+/* ================================== */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref as dref, push, set, remove, onValue, get, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// Logo
+if (LOGO_BASE64) document.querySelectorAll("[data-logo]").forEach(el => {
+  const i = document.createElement("img"); i.src = LOGO_BASE64; i.alt = "Orkide"; el.replaceWith(i);
+});
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app), db = getDatabase(app), storage = getStorage(app);
+
+/* ---------- Giriş / Kayıt ---------- */
+let register = false;
+const setMode = r => {
+  register = r;
+  $("#authTitle").textContent = r ? "Hesap oluştur" : "Giriş yap";
+  $("#authBtn").textContent = r ? "Kayıt ol" : "Giriş yap";
+  $("#toggle").textContent = r ? "Zaten hesabın var mı? Giriş yap" : "Hesabın yok mu? Kayıt ol";
+  $("#uname").classList.toggle("hide", !r);
+  $("#forgot").classList.toggle("hide", r);
+  $("#err").textContent = "";
+};
+setMode(false); $("#forgot").classList.remove("hide");
+$("#toggle").onclick = () => setMode(!register);
+const trErr = e => ({
+  "auth/invalid-credential":"E-posta veya şifre hatalı.","auth/email-already-in-use":"Bu e-posta zaten kayıtlı.",
+  "auth/weak-password":"Şifre en az 6 karakter olmalı.","auth/invalid-email":"E-posta adresi geçersiz.",
+  "auth/too-many-requests":"Çok fazla deneme. Biraz bekleyip tekrar dene.","auth/network-request-failed":"İnternet bağlantını kontrol et."
+}[e.code] || "Bir hata oluştu: " + (e.code || e.message));
+$("#authForm").onsubmit = async ev => {
+  ev.preventDefault(); $("#err").textContent = ""; $("#authBtn").disabled = true;
+  try {
+    const em = $("#email").value.trim(), pw = $("#pass").value;
+    if (register) {
+      const name = $("#uname").value.trim(); if (!name) throw {code:"", message:"Kullanıcı adı yaz."};
+      const c = await createUserWithEmailAndPassword(auth, em, pw);
+      await updateProfile(c.user, { displayName: name });
+      location.reload();
+    } else await signInWithEmailAndPassword(auth, em, pw);
+  } catch (e) { $("#err").textContent = e.code ? trErr(e) : e.message; }
+  $("#authBtn").disabled = false;
+};
+$("#forgot").onclick = async () => {
+  const em = $("#email").value.trim(); if (!em) { $("#err").textContent = "Önce e-posta adresini yaz."; return; }
+  try { await sendPasswordResetEmail(auth, em); $("#err").style.color = "var(--green)"; $("#err").textContent = "Şifre sıfırlama bağlantısı gönderildi."; }
+  catch (e) { $("#err").style.color = ""; $("#err").textContent = trErr(e); }
+};
+$("#out").onclick = () => signOut(auth);
+
+/* ---------- Oturum ---------- */
+let me = null, isAdmin = false, unsubPosts, unsubPlayers;
+onAuthStateChanged(auth, u => {
+  me = u;
+  $("#auth").classList.toggle("hide", !!u);
+  $("#app").classList.toggle("hide", !u);
+  unsubPosts?.(); unsubPlayers?.();
+  if (!u) return;
+  const n = u.displayName || u.email.split("@")[0];
+  $("#meName").textContent = n; $("#meAv").textContent = $("#cAv").textContent = n[0].toUpperCase();
+  isAdmin = ADMIN_EMAILS.map(x => x.toLowerCase()).includes((u.email || "").toLowerCase());
+  $("#pform").classList.toggle("hide", !isAdmin);
+  $("#pName").textContent = n; $("#pAv").textContent = n[0].toUpperCase();
+  get(dref(db, "users/" + u.uid)).then(d => $("#bio").value = d.exists() ? (d.val().bio || "") : "").catch(() => {});
+  listenPosts(); listenPlayers();
+});
+
+/* ---------- Gezinme ---------- */
+document.querySelectorAll(".nav").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".nav").forEach(x => x.classList.toggle("on", x === b));
+  ["home", "players", "profile"].forEach(v => $("#" + v).classList.toggle("hide", b.dataset.view !== v));
+});
+
+/* ---------- Video ---------- */
+const ago = ts => {
+  if (!ts) return "şimdi"; const s = (Date.now() - ts) / 1000;
+  if (s < 60) return "şimdi"; if (s < 3600) return Math.floor(s/60) + " dk";
+  if (s < 86400) return Math.floor(s/3600) + " sa"; return new Date(ts).toLocaleDateString("tr-TR");
+};
+const videoHTML = url => {
+  if (!url) return "";
+  const y = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/);
+  if (y) return `<iframe src="https://www.youtube.com/embed/${y[1]}" allowfullscreen loading="lazy"></iframe>`;
+  return `<video src="${esc(url)}" controls preload="metadata"></video>`;
+};
+let file = null;
+$("#vfile").onchange = e => {
+  file = e.target.files[0]; if (!file) return;
+  if (file.size > 100 * 1024 * 1024) { $("#perr").textContent = "Video en fazla 100 MB olabilir."; file = null; return; }
+  $("#prev").src = URL.createObjectURL(file); $("#prev").classList.remove("hide"); $("#perr").textContent = "";
+};
+$("#text").oninput = () => $("#cnt").textContent = $("#text").value.length + "/280";
+
+/* ---------- Gönderiler ---------- */
+$("#send").onclick = async () => {
+  const text = $("#text").value.trim(), vurl = $("#vurl").value.trim();
+  if (!text && !file && !vurl) { $("#perr").textContent = "Bir şeyler yaz ya da video ekle."; return; }
+  $("#send").disabled = true; $("#perr").textContent = "";
+  try {
+    let videoUrl = vurl;
+    if (file) {
+      const r = ref(storage, `videos/${me.uid}/${Date.now()}_${file.name.replace(/[^\w.-]/g,"_")}`);
+      const task = uploadBytesResumable(r, file);
+      await new Promise((ok, no) => task.on("state_changed",
+        s => $("#send").textContent = "%" + Math.round(100 * s.bytesTransferred / s.totalBytes), no, ok));
+      videoUrl = await getDownloadURL(r);
+    }
+    await push(dref(db, "posts"), {
+      uid: me.uid, author: me.displayName || me.email.split("@")[0],
+      text, videoUrl, createdAt: serverTimestamp()
+    });
+    $("#text").value = ""; $("#vurl").value = ""; $("#vfile").value = ""; file = null;
+    $("#prev").classList.add("hide"); $("#cnt").textContent = "0/280";
+  } catch (e) { $("#perr").textContent = "Gönderilemedi: " + (e.code || e.message); }
+  $("#send").disabled = false; $("#send").textContent = "Gönder";
+};
+
+let allDocs = [], term = "";
+const openSet = new Set(), cache = {}, subs = {};
+const cmHTML = id => (cache[id] || []).map(c => `<div class="cmt"><b>${esc(c.author)}</b> <span class="meta">${ago(c.createdAt)}</span><div>${esc(c.text)}</div></div>`).join("")
+  + `<form class="cform" data-cf="${id}"><input class="f" maxlength="200" placeholder="Yanıt yaz…" required><button class="btn">Yanıtla</button></form>`;
+const paintCm = id => document.querySelectorAll(`[data-cm="${id}"]`).forEach(el => { el.classList.remove("hide"); el.innerHTML = cmHTML(id); });
+const postHTML = d => {
+  const p = d.data(), liked = (p.likes || []).includes(me.uid), open = openSet.has(d.id);
+  return `<article class="post"><div class="av">${esc((p.author || "?")[0].toUpperCase())}</div>
+    <div class="pb"><div class="meta"><b>${esc(p.author)}</b> · ${ago(p.createdAt)}</div>
+    ${p.text ? `<div class="txt">${esc(p.text)}</div>` : ""}${videoHTML(p.videoUrl)}
+    <div class="act"><button data-cbtn="${d.id}">💬 ${p.commentsCount || 0}</button>
+    <button class="${liked ? "liked" : ""}" data-like="${d.id}" data-on="${liked}">${liked ? "♥" : "♡"} ${(p.likes || []).length}</button>
+    ${p.uid === me.uid ? `<button class="del" data-del="${d.id}">Sil</button>` : ""}</div>
+    <div class="cms ${open ? "" : "hide"}" data-cm="${d.id}">${open ? cmHTML(d.id) : ""}</div></div></article>`;
+};
+function renderFeeds() {
+  const ok = d => { const p = d.data(); return !term || (p.text || "").toLowerCase().includes(term) || (p.author || "").toLowerCase().includes(term); };
+  const f = allDocs.filter(ok), mine = allDocs.filter(d => d.data().uid === me.uid);
+  $("#feed").innerHTML = f.length ? f.map(postHTML).join("") : `<div class="empty">${term ? "Aramayla eşleşen gönderi yok." : "Henüz gönderi yok. İlk gönderiyi sen paylaş."}</div>`;
+  $("#myfeed").innerHTML = mine.length ? mine.map(postHTML).join("") : '<div class="empty">Henüz gönderin yok.</div>';
+  $("#pcount").textContent = mine.length + " gönderi";
+}
+function listenPosts() {
+  unsubPosts = onValue(dref(db, "posts"), snap => {
+    const arr = [];
+    snap.forEach(c => { const v = c.val(); arr.push({ id: c.key, data: () => ({ ...v, likes: Object.keys(v.likes || {}) }) }); });
+    allDocs = arr.sort((x, y) => (y.data().createdAt || 0) - (x.data().createdAt || 0));
+    renderFeeds();
+  }, e => $("#feed").innerHTML = `<div class="empty">Gönderiler yüklenemedi (${esc(e.code)}). Realtime Database kurallarını kontrol et.</div>`);
+}
+$("#search").oninput = e => { term = e.target.value.trim().toLowerCase(); if (me) renderFeeds(); };
+const feedClick = async e => {
+  const l = e.target.closest("[data-like]"), d = e.target.closest("[data-del]"), c = e.target.closest("[data-cbtn]");
+  if (l) { const r = dref(db, `posts/${l.dataset.like}/likes/${me.uid}`); l.dataset.on === "true" ? remove(r) : set(r, true); }
+  if (d && confirm("Bu gönderi silinsin mi?")) remove(dref(db, "posts/" + d.dataset.del));
+  if (c) {
+    const id = c.dataset.cbtn;
+    if (openSet.has(id)) { openSet.delete(id); subs[id]?.(); document.querySelectorAll(`[data-cm="${id}"]`).forEach(el => el.classList.add("hide")); }
+    else {
+      openSet.add(id); paintCm(id);
+      subs[id] = onValue(dref(db, "comments/" + id), s => {
+        const a = []; s.forEach(x => a.push(x.val()));
+        cache[id] = a.sort((p, q) => (p.createdAt || 0) - (q.createdAt || 0)); paintCm(id);
+      });
+    }
+  }
+};
+$("#feed").onclick = feedClick; $("#myfeed").onclick = feedClick;
+document.addEventListener("submit", async e => {
+  const f = e.target.closest("[data-cf]"); if (!f) return; e.preventDefault();
+  const inp = f.querySelector("input"), text = inp.value.trim(); if (!text) return;
+  inp.value = "";
+  await push(dref(db, "comments/" + f.dataset.cf), { uid: me.uid, author: me.displayName || me.email.split("@")[0], text, createdAt: serverTimestamp() });
+  runTransaction(dref(db, `posts/${f.dataset.cf}/commentsCount`), n => (n || 0) + 1);
+});
+$("#saveBio").onclick = async () => {
+  try { await set(dref(db, "users/" + me.uid), { name: me.displayName || "", bio: $("#bio").value.trim() }); $("#bioMsg").textContent = "Kaydedildi."; }
+  catch (e) { $("#bioMsg").textContent = "Kaydedilemedi: " + (e.code || e.message); }
+};
+
+/* ---------- Oyuncular ---------- */
+$("#pform").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await push(dref(db, "players"), {
+      name: $("#pn").value.trim(), position: $("#pp").value.trim(),
+      team: $("#pt").value.trim(), number: $("#pnum").value, createdAt: serverTimestamp()
+    });
+    e.target.reset();
+  } catch (err) { alert("Oyuncu eklenemedi: " + (err.code || err.message)); }
+};
+function listenPlayers() {
+  unsubPlayers = onValue(dref(db, "players"), snap => {
+    const arr = []; snap.forEach(c => arr.push({ id: c.key, ...c.val() }));
+    arr.sort((x, y) => (y.createdAt || 0) - (x.createdAt || 0));
+    $("#plist").innerHTML = arr.length ? arr.map(p => `<div class="pl"><div class="av">${esc((p.name || "?")[0].toUpperCase())}</div><b>${esc(p.name)}</b>
+      <small>${esc(p.position)}</small><small>${esc(p.team)}</small>${p.number ? `<div class="num">#${esc(p.number)}</div>` : ""}
+      ${isAdmin ? `<button class="btn ghost" style="margin-top:8px;padding:4px 14px" data-pdel="${p.id}">Sil</button>` : ""}</div>`).join("")
+      : '<div class="empty" style="grid-column:1/-1">Henüz oyuncu eklenmedi.</div>';
+  });
+}
+$("#plist").onclick = e => { const b = e.target.closest("[data-pdel]"); if (b && confirm("Oyuncu silinsin mi?")) remove(dref(db, "players/" + b.dataset.pdel)); };
+</script>
+</body>
+</html>
