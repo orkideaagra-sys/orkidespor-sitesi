@@ -63,6 +63,7 @@ dialog form{display:grid;gap:10px}
     <h2>Yönetici değilsin</h2>
     <p class="meta" style="font-size:15px">Bu hesabın yönetici olması için Firebase Realtime Database'de <b>admins</b> altına şu kimliği (UID) ekle ve değerini <b>true</b> yap:</p>
     <input class="f" id="uid" readonly onclick="this.select()">
+    <p class="err" id="why" style="min-height:0"></p>
     <button class="btn g" id="out0">Çıkış yap</button>
   </div>
 </div>
@@ -80,7 +81,17 @@ dialog form{display:grid;gap:10px}
       <button class="btn g" data-t="log">📜 Kayıt</button>
     </div>
 
-    <section id="t-users"><input class="f" id="us" placeholder="Kullanıcı ara (ad veya UID)" style="margin-top:12px"><div id="ul"></div></section>
+    <section id="t-users">
+      <input class="f" id="us" placeholder="Kullanıcı ara (ad veya UID)" style="margin-top:12px">
+      <div id="ul"></div>
+      <div class="box" style="margin-top:14px">
+        <b>Kişi ekle</b>
+        <div class="meta" style="font-size:14px">Firebase → Authentication → Users listesinde görünen ama burada olmayan birini eklemek için, tablodaki "User UID" değerini ve bir ad yaz.</div>
+        <input class="f" id="nu" placeholder="User UID">
+        <input class="f" id="nn" placeholder="Görünecek ad">
+        <button class="btn" id="nadd">Ekle</button>
+      </div>
+    </section>
     <section id="t-posts" class="hide"><input class="f" id="ps" placeholder="Gönderi veya kişi ara" style="margin-top:12px"><div id="pl"></div></section>
     <section id="t-stories" class="hide"><div class="thumbs" id="sl"></div></section>
     <section id="t-bans" class="hide"><div id="bl"></div></section>
@@ -139,7 +150,14 @@ let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null;
 
 const show = id => ["login", "denied", "panel"].forEach(x => $("#" + x).classList.toggle("hide", x !== id));
 const log = (action, target) => push(dref(db, "adminlog"), { by: myName, action, target, at: serverTimestamp() }).catch(() => {});
-const nameOf = uid => users[uid]?.name || uid;
+const known = () => {
+  const k = {};
+  Object.values(posts).forEach(p => { if (p.uid) k[p.uid] = { name: p.author }; });
+  Object.values(stories).forEach(x => { if (x.uid) k[x.uid] = { name: x.author }; });
+  Object.entries(users).forEach(([id, u]) => k[id] = { ...k[id], ...u });
+  return k;
+};
+const nameOf = uid => known()[uid]?.name || uid;
 
 /* ---- Giriş ---- */
 $("#lf").onsubmit = async e => {
@@ -158,8 +176,9 @@ onAuthStateChanged(auth, async u => {
   me = u; if (!u) return show("login");
   try {
     const a = await get(dref(db, "admins/" + u.uid));
-    if (!a.exists()) { $("#uid").value = u.uid; return show("denied"); }
-  } catch { $("#uid").value = u.uid; return show("denied"); }
+    if (!a.exists()) { $("#uid").value = u.uid; $("#why").textContent = "Sebep: Veritabanında admins altında bu UID bulunamadı. UID'yi (ve değerinin true olduğunu) kontrol et. Giriş yaptığın hesap: " + (u.email || u.displayName || "?"); return show("denied"); }
+    if (a.val() !== true) { $("#uid").value = u.uid; $("#why").textContent = "Sebep: UID bulundu ama değeri true değil (şu an: " + JSON.stringify(a.val()) + "). Değeri tırnaksız true yap."; return show("denied"); }
+  } catch (err) { $("#uid").value = u.uid; $("#why").textContent = "Sebep: Okuma izni yok (" + (err.code || err.message) + "). Yeni kuralı Realtime Database → Rules'a yapıştırıp Publish'e bastın mı?"; return show("denied"); }
   myName = u.displayName || (u.email || "").split("@")[0];
   $("#me").textContent = myName; show("panel"); start();
 });
@@ -176,7 +195,7 @@ function start() {
 /* ---- Çizim ---- */
 function render() {
   const day = new Date().setHours(0, 0, 0, 0);
-  const st = [["Kullanıcı", Object.keys(users).length], ["Gönderi", Object.keys(posts).length],
+  const st = [["Kullanıcı", Object.keys(known()).length], ["Gönderi", Object.keys(posts).length],
     ["Bugünkü gönderi", Object.values(posts).filter(p => p.createdAt > day).length],
     ["Aktif hikaye", Object.values(stories).filter(s => Date.now() - s.createdAt < 864e5).length],
     ["Aktif yasak", Object.values(bans).filter(live).length]];
@@ -184,7 +203,7 @@ function render() {
 
   const cnt = {}; Object.values(posts).forEach(p => cnt[p.uid] = (cnt[p.uid] || 0) + 1);
   const q = $("#us").value.trim(), qk = nkey(q);
-  const ul = Object.entries(users).filter(([id, u]) => !q || nkey(u.name || "").includes(qk) || id.includes(q))
+  const ul = Object.entries(known()).filter(([id, u]) => !q || nkey(u.name || "").includes(qk) || id.includes(q))
     .sort((a, b) => (a[1].name || "").localeCompare(b[1].name || "", "tr"));
   $("#ul").innerHTML = ul.length ? ul.map(([id, u]) => {
     const b = live(bans[id]) ? bans[id] : null;
@@ -194,7 +213,7 @@ function render() {
       <button class="btn g s" data-a="mail" data-u="${esc(id)}">Şifre e-postası</button>
       <button class="btn g s" data-a="wipe" data-u="${esc(id)}">İçerikleri sil</button>
       <button class="btn r s" data-a="del" data-u="${esc(id)}">Hesabı sil</button></div></div>`;
-  }).join("") : '<div class="empty">Kullanıcı yok. (Kullanıcılar yeni sürümle giriş yaptıkça burada görünür.)</div>';
+  }).join("") : '<div class="empty">Kullanıcı yok. Kullanıcılar siteye girdikçe veya paylaşım yaptıkça burada görünür. Eksik birini aşağıdaki "Kişi ekle" ile elle ekleyebilirsin.</div>';
 
   const pq = nkey($("#ps").value);
   const pl = Object.entries(posts).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0))
@@ -271,6 +290,12 @@ $("#bf").onsubmit = async e => {
   if (isNaN(d) || d < 0) return alert("Gün sayısını yaz.");
   try { await setBan(banTarget, $("#btype").value, d, $("#brs").value.trim()); $("#dlg").close(); }
   catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); }
+};
+$("#nadd").onclick = async () => {
+  const u = $("#nu").value.trim(), n = $("#nn").value.trim();
+  if (!u || !n) return alert("UID ve ad yaz.");
+  try { await set(dref(db, "users/" + u), { name: n }); log("Kişi eklendi", n); $("#nu").value = $("#nn").value = ""; }
+  catch (err) { alert("Eklenemedi: " + (err.code || err.message)); }
 };
 $("#annSave").onclick = async () => {
   const t = $("#at").value.trim(); if (!t) return alert("Duyuru metni yaz.");
