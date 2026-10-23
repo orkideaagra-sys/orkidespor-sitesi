@@ -1,0 +1,682 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101426">
+<meta name="description" content="HamzaStudio Topluluk Kuralları ve Güven Merkezi">
+<title>HamzaStudio | Topluluk Kuralları</title>
+
+<style>
+:root {
+  --bg:#0b1020;
+  --panel:#141d34;
+  --panel2:#1b2744;
+  --text:#eef2ff;
+  --muted:#aab5d0;
+  --line:#2c395b;
+  --purple:#8b7cff;
+  --cyan:#42d6c5;
+  --red:#ff7185;
+  --yellow:#ffd166;
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; scroll-padding-top:85px; }
+body {
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  background:radial-gradient(ellipse at top,#25234b 0,transparent 40%),var(--bg);
+  color:var(--text);
+  line-height:1.75;
+}
+a { color:#bdb4ff; }
+button,input,textarea,select { font:inherit; }
+.container { width:min(1120px,92%); margin:auto; }
+header {
+  position:sticky; top:0; z-index:10;
+  background:#0b1020ee;
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav {
+  min-height:70px; display:flex;
+  justify-content:space-between; align-items:center; gap:15px;
+}
+.brand {
+  color:white; text-decoration:none;
+  font-size:1.15rem; font-weight:850;
+}
+.logo {
+  display:inline-grid; place-items:center;
+  width:39px; height:39px; margin-right:8px;
+  border-radius:13px;
+  background:linear-gradient(135deg,var(--purple),#479bff);
+}
+nav { display:flex; gap:17px; flex-wrap:wrap; }
+nav a { text-decoration:none; font-size:.9rem; color:var(--muted); }
+nav a:hover { color:white; }
+.menu {
+  display:none; color:white; background:var(--panel);
+  border:1px solid var(--line); border-radius:10px; padding:8px;
+}
+.hero { padding:75px 0 40px; }
+.badge {
+  display:inline-block; padding:5px 12px; border-radius:30px;
+  background:#8b7cff20; border:1px solid #8b7cff66;
+  color:#d4ceff; font-size:.85rem;
+}
+h1 {
+  font-size:clamp(2.5rem,7vw,5rem);
+  line-height:1.08; letter-spacing:-.05em;
+  margin:20px 0;
+}
+.gradient {
+  background:linear-gradient(100deg,#bdb4ff,#70e7dc);
+  color:transparent; background-clip:text;
+}
+p { color:var(--muted); }
+.hero p { max-width:750px; font-size:1.1rem; }
+.actions { display:flex; gap:12px; flex-wrap:wrap; margin:25px 0; }
+.btn {
+  padding:10px 16px; border-radius:11px;
+  border:1px solid var(--line); color:white;
+  background:var(--panel2); cursor:pointer;
+  text-decoration:none; display:inline-block;
+}
+.btn.primary {
+  background:linear-gradient(135deg,#8174ff,#598dff);
+  border-color:transparent; font-weight:750;
+}
+.btn:hover { filter:brightness(1.15); }
+.stats,.cards {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px; margin:25px 0;
+}
+.card,.stat,.rule {
+  background:linear-gradient(145deg,#17213a,#10172a);
+  border:1px solid var(--line); border-radius:16px;
+  padding:19px;
+}
+.stat strong { display:block; font-size:1.15rem; }
+.stat span { color:var(--muted); font-size:.9rem; }
+.layout {
+  display:grid; grid-template-columns:230px minmax(0,1fr);
+  gap:25px; align-items:start;
+}
+.sidebar {
+  position:sticky; top:90px; padding:15px;
+  border:1px solid var(--line); border-radius:15px;
+  background:#10172aee;
+}
+.sidebar h3 {
+  color:var(--muted); font-size:.85rem;
+  text-transform:uppercase; letter-spacing:.1em;
+}
+.sidebar a {
+  display:block; padding:7px 9px;
+  border-radius:8px; text-decoration:none;
+  color:#c5cee4; font-size:.9rem;
+}
+.sidebar a:hover { background:var(--panel2); color:white; }
+.search {
+  width:100%; padding:13px;
+  border:1px solid var(--line); border-radius:11px;
+  color:white; background:var(--panel); margin-bottom:22px;
+}
+.section { margin-bottom:38px; }
+h2 { font-size:1.8rem; line-height:1.3; }
+h3 { line-height:1.4; }
+.cards { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.card h3 { margin:7px 0; }
+.card p { margin-bottom:0; }
+.rule { margin:12px 0; }
+.rule h3 { margin:0 0 6px; }
+.rule p { margin:0; }
+.icon { font-size:1.6rem; }
+ul { padding-left:23px; color:var(--muted); }
+li { padding:3px 0; }
+.notice {
+  padding:16px; border:1px solid #ffd16666;
+  background:#ffd1660b; border-radius:13px; margin:16px 0;
+}
+.notice strong { color:var(--yellow); }
+table { width:100%; border-collapse:collapse; min-width:550px; }
+.table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:13px; }
+th,td { text-align:left; padding:12px; border-bottom:1px solid var(--line); }
+th { background:var(--panel2); }
+td { color:var(--muted); }
+tr:last-child td { border-bottom:0; }
+.pill { padding:3px 8px; border-radius:20px; font-size:.8rem; font-weight:750; }
+.low { color:var(--cyan); background:#42d6c51c; }
+.medium { color:var(--yellow); background:#ffd1661c; }
+.high { color:#ff9aaa; background:#ff71851c; }
+.steps { display:grid; gap:12px; counter-reset:step; }
+.step {
+  display:flex; gap:13px; padding:14px;
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:13px;
+}
+.step:before {
+  counter-increment:step; content:counter(step);
+  flex:0 0 34px; height:34px;
+  display:grid; place-items:center; border-radius:10px;
+  background:#8b7cff25; color:#d4ceff; font-weight:800;
+}
+.step p { margin:2px 0 0; }
+.form-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:14px;
+}
+.field { display:flex; flex-direction:column; gap:6px; }
+.field.full { grid-column:1/-1; }
+label { color:#d8e0f5; font-size:.9rem; }
+input,select,textarea {
+  padding:12px; color:white; background:#0c1325;
+  border:1px solid var(--line); border-radius:10px; width:100%;
+}
+textarea { min-height:130px; resize:vertical; }
+input:focus,textarea:focus,select:focus,.search:focus {
+  outline:2px solid var(--purple); outline-offset:1px;
+}
+.small { font-size:.84rem; }
+.hidden { display:none!important; }
+footer { margin-top:60px; border-top:1px solid var(--line); padding:30px 0; }
+footer p { font-size:.9rem; }
+@media(max-width:850px) {
+  .layout { grid-template-columns:1fr; }
+  .sidebar { position:static; }
+  nav.main-nav {
+    display:none; position:absolute; top:70px; left:0; right:0;
+    padding:18px 4%; background:var(--bg);
+    border-bottom:1px solid var(--line);
+    flex-direction:column;
+  }
+  nav.main-nav.open { display:flex; }
+  .menu { display:block; }
+}
+@media(max-width:600px) {
+  .stats,.cards,.form-grid { grid-template-columns:1fr; }
+  .field.full { grid-column:auto; }
+  .hero { padding-top:45px; }
+}
+@media print {
+  header,.sidebar,.actions,.search,.menu { display:none!important; }
+  body { background:white; color:#111; }
+  p,td,li { color:#333; }
+  .card,.rule,.stat { background:white; border:1px solid #ccc; }
+  .layout { display:block; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="container nav">
+    <a class="brand" href="#top">
+      <span class="logo">H</span>HamzaStudio
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="#ilkeler">İlkeler</a>
+      <a href="#ihlaller">İhlaller</a>
+      <a href="#yaptirimlar">Yaptırımlar</a>
+      <a href="#itiraz">İtiraz</a>
+      <a href="#bildir">Bildirim</a>
+    </nav>
+    <button class="menu" id="menuBtn" aria-expanded="false">☰ Menü</button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="container hero">
+    <span class="badge">🛡️ TOPLULUK GÜVENLİĞİ MERKEZİ</span>
+    <h1>Birlikte daha iyi bir<br>
+      <span class="gradient">topluluk oluşturalım.</span>
+    </h1>
+    <p>
+      HamzaStudio'da herkesin saygılı, güvenli ve yaratıcı bir
+      ortamda bulunmasını amaçlıyoruz. Topluluğumuzu korumak için
+      kurallarımızı incele, haklarını öğren ve gerektiğinde ihlal bildir.
+    </p>
+    <div class="actions">
+      <a class="btn primary" href="#ilkeler">Kuralları keşfet →</a>
+      <a class="btn" href="#bildir">⚑ İhlal bildir</a>
+      <button class="btn" onclick="window.print()">⎙ Yazdır / PDF</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong>🤝 Saygı</strong><span>Herkese karşı nazik ol.</span></div>
+      <div class="stat"><strong>🔐 Güvenlik</strong><span>Kişisel bilgileri koru.</span></div>
+      <div class="stat"><strong>✨ Yaratıcılık</strong><span>Özgün içerik üret.</span></div>
+    </div>
+  </section>
+
+  <div class="container layout">
+    <aside class="sidebar">
+      <h3>Sayfa menüsü</h3>
+      <a href="#genel">01 · Genel bakış</a>
+      <a href="#ilkeler">02 · Topluluk ilkeleri</a>
+      <a href="#ihlaller">03 · Yasaklı davranışlar</a>
+      <a href="#yaptirimlar">04 · İhlal seviyeleri</a>
+      <a href="#moderasyon">05 · Moderasyon</a>
+      <a href="#guvenlik">06 · Hesap güvenliği</a>
+      <a href="#telif">07 · Telif hakları</a>
+      <a href="#itiraz">08 · İtiraz süreci</a>
+      <a href="#bildir">09 · Bildirim formu</a>
+      <a href="#sss">10 · Sık sorulanlar</a>
+    </aside>
+
+    <div class="content">
+      <input class="search" id="search" type="search"
+        placeholder="🔎 Kurallarda ara: spam, telif, güvenlik…"
+        aria-label="Kurallarda ara">
+
+      <section class="section searchable" id="genel">
+        <h2>Genel bakış</h2>
+        <p>
+          Bu kurallar HamzaStudio topluluğundaki kullanıcıların,
+          içeriklerin ve hizmetlerin korunmasına yardımcı olmak için
+          hazırlanmıştır. Platformu kullanan herkesin bu ilkelere uyması beklenir.
+        </p>
+        <div class="notice">
+          <strong>Önemli bilgilendirme:</strong>
+          Bu sayfa HamzaStudio için hazırlanmış bir politika taslağıdır.
+          Resmî olarak yayımlanmadan önce site sahibi tarafından kontrol edilmeli;
+          gerçek iletişim adresleri ve hizmet koşulları eklenmelidir.
+        </div>
+        <p>
+          Bir davranışın şaka amacıyla yapılması, başkasına zarar verdiğinde
+          onu otomatik olarak kabul edilebilir hâle getirmez. Kurallar,
+          bağlam ve olayın etkisi birlikte değerlendirilir.
+        </p>
+      </section>
+
+      <section class="section searchable" id="ilkeler">
+        <h2>Topluluk ilkeleri</h2>
+        <div class="cards">
+          <article class="card">
+            <div class="icon">🤝</div>
+            <h3>1. Saygılı iletişim</h3>
+            <p>Hakaret, zorbalık, tehdit ve sürekli rahatsız etmeden kaçın.
+              Farklı görüşleri kişisel saldırıya dönüştürme.</p>
+          </article>
+          <article class="card">
+            <div class="icon">🔒</div>
+            <h3>2. Mahremiyet</h3>
+            <p>Telefon, adres, parola, konum veya özel mesajları
+              izinsiz paylaşma.</p>
+          </article>
+          <article class="card">
+            <div class="icon">🧠</div>
+            <h3>3. Dürüstlük</h3>
+            <p>Kimliğini veya yetkini yanlış tanıtma; sahte ödül,
+              sahte destek ve dolandırıcılık girişimlerinde bulunma.</p>
+          </article>
+          <article class="card">
+            <div class="icon">🎨</div>
+            <h3>4. Emeğe saygı</h3>
+            <p>Başkasının yazısını, görselini, kodunu veya tasarımını
+              kendininmiş gibi sunma.</p>
+          </article>
+          <article class="card">
+            <div class="icon">🧹</div>
+            <h3>5. Spam yapma</h3>
+            <p>Tekrarlanan mesajlarla sohbeti doldurma; izinsiz reklam
+              ve yanıltıcı bağlantılar paylaşma.</p>
+          </article>
+          <article class="card">
+            <div class="icon">🌱</div>
+            <h3>6. Yapıcı katılım</h3>
+            <p>Hataları saygılı biçimde bildir, anlaşmazlıklarda sakin kal
+              ve başkalarının katkılarına değer ver.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section searchable" id="ihlaller">
+        <h2>Yasaklı davranış ve içerikler</h2>
+
+        <article class="rule">
+          <h3>🚫 Taciz, zorbalık ve nefret</h3>
+          <p>Tehdit etmek, birini hedef göstermek, ısrarlı şekilde
+            rahatsız etmek veya insanları kimlik özellikleri nedeniyle
+            aşağılamak yasaktır.</p>
+        </article>
+
+        <article class="rule">
+          <h3>🔐 Kişisel bilgileri ifşa etme</h3>
+          <p>Başkasının adresini, telefonunu, özel yazışmalarını,
+            özel fotoğraflarını veya hesap bilgilerini izinsiz yayımlama.</p>
+        </article>
+
+        <article class="rule">
+          <h3>🦠 Dolandırıcılık ve zararlı bağlantılar</h3>
+          <p>Kimlik avı, parola çalma, zararlı yazılım yayma,
+            sahte çekiliş ve kullanıcıları kandırarak bilgi edinme girişimleri yasaktır.</p>
+        </article>
+
+        <article class="rule">
+          <h3>📣 Spam ve manipülasyon</h3>
+          <p>Aşırı tekrarlı mesajlar, sahte etkileşim, botlarla oylama
+            manipülasyonu ve izinsiz toplu reklam yasaktır.</p>
+        </article>
+
+        <article class="rule">
+          <h3>⚠️ Tehlikeli veya yasa dışı faaliyetler</h3>
+          <p>İnsanlara zarar vermeyi kolaylaştıran, suç işlemeye teşvik eden
+            veya yürürlükteki kuralları ihlal eden içerikler kaldırılabilir.</p>
+        </article>
+
+        <article class="rule">
+          <h3>🔞 Yaşa uygun olmayan içerik</h3>
+          <p>Hizmetin yaş gerekliliklerine aykırı içerikler ve çocukların
+            istismarını içeren materyaller kesinlikle yasaktır.</p>
+        </article>
+
+        <article class="rule">
+          <h3>🎭 Kimlik taklidi</h3>
+          <p>Başka bir kullanıcıyı, moderatörü veya kurumu yanıltıcı
+            biçimde taklit etmek; sahte resmî duyurular yayımlamak yasaktır.</p>
+        </article>
+
+        <article class="rule">
+          <h3>🧨 Sistemi kötüye kullanma</h3>
+          <p>İzinsiz erişim girişimleri, hizmeti aksatma, güvenlik açıklarını
+            kötüye kullanma ve yasakları atlatmaya yönelik hesap çoğaltma yasaktır.</p>
+        </article>
+
+        <article class="rule">
+          <h3>📢 Sahte bildirim ve raporlar</h3>
+          <p>Bir kullanıcıyı susturmak amacıyla bilerek yanlış bildirimler
+            göndermek veya bildirim sistemini kötüye kullanmak ihlal sayılabilir.</p>
+        </article>
+      </section>
+
+      <section class="section searchable" id="yaptirimlar">
+        <h2>İhlal seviyeleri ve yaptırımlar</h2>
+        <p>
+          Her olayın bağlamı, ağırlığı, tekrarlanması ve ortaya çıkardığı
+          zarar dikkate alınır. Aşağıdaki tablo örnek bir değerlendirme rehberidir.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Seviye</th><th>Örnek</th><th>Olası yaptırım</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pill low">Düşük</span></td>
+                <td>İlk kez konu dışı paylaşım veya küçük çaplı tekrar.</td>
+                <td>Hatırlatma, uyarı veya içeriğin kaldırılması.</td>
+              </tr>
+              <tr>
+                <td><span class="pill medium">Orta</span></td>
+                <td>Tekrarlanan spam, hakaret veya uyarıları görmezden gelme.</td>
+                <td>Resmî uyarı, geçici paylaşım kısıtlaması veya uzaklaştırma.</td>
+              </tr>
+              <tr>
+                <td><span class="pill high">Yüksek</span></td>
+                <td>Tehdit, dolandırıcılık, mahremiyet ihlali veya ağır taciz.</td>
+                <td>Hesabın askıya alınması ya da kapatılması.</td>
+              </tr>
+              <tr>
+                <td><span class="pill high">Acil</span></td>
+                <td>Yakın ve ciddi güvenlik riski.</td>
+                <td>Hızlı müdahale ve uygun yetkili kanallara bildirim.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="notice">
+          <strong>Adil değerlendirme:</strong>
+          Her olayda aynı ceza uygulanması zorunlu değildir.
+          Ağır durumlarda önceden uyarı verilmeden işlem yapılabilir.
+        </div>
+      </section>
+
+      <section class="section searchable" id="moderasyon">
+        <h2>Moderasyon politikası</h2>
+        <ul>
+          <li>Bildirimler mümkün olduğunca tarafsız ve tutarlı değerlendirilir.</li>
+          <li>İçerikler yalnızca eleştirel görüş taşıdığı için değil,
+            kuralları ihlal ettiği durumlarda işlem görmelidir.</li>
+          <li>Gerekli olduğunda içerik kaldırılabilir, görünürlüğü sınırlandırılabilir
+            veya hesap geçici olarak kısıtlanabilir.</li>
+          <li>Kullanıcıya mümkün olduğunda kararın gerekçesi açıklanır.</li>
+          <li>Moderatör kararları da hatalı olabilir; uygun kanaldan itiraz edilebilir.</li>
+          <li>Moderatörlere saygılı şekilde soru sormak serbesttir;
+            tehdit ve kişisel bilgi ifşası kabul edilmez.</li>
+        </ul>
+      </section>
+
+      <section class="section searchable" id="guvenlik">
+        <h2>Hesap ve kişisel güvenlik</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>🔑 Parolanı koru</h3>
+            <p>Her hizmette farklı parola kullan. Parolanı ve doğrulama
+              kodlarını kimseyle paylaşma.</p>
+          </article>
+          <article class="card">
+            <h3>🔗 Bağlantıları kontrol et</h3>
+            <p>Şüpheli bağlantılara tıklama. Giriş bilgilerini yalnızca
+              doğru ve güvendiğin siteye gir.</p>
+          </article>
+          <article class="card">
+            <h3>📷 Paylaşmadan önce düşün</h3>
+            <p>Fotoğraf ve videolarda adres, okul, telefon veya konum
+              bilgilerinin görünmediğinden emin ol.</p>
+          </article>
+          <article class="card">
+            <h3>🧾 Kanıtları güvenli tut</h3>
+            <p>Bildirim için tarih, içerik bağlantısı ve kısa açıklama
+              yeterli olabilir. Gereksiz özel bilgi ekleme.</p>
+          </article>
+        </div>
+        <div class="notice">
+          <strong>Güvenlik açığı mı buldun?</strong>
+          Açığı kötüye kullanma veya herkese açık paylaşma.
+          Site sahibinin belirlediği güvenli iletişim kanalından bildir.
+        </div>
+      </section>
+
+      <section class="section searchable" id="telif">
+        <h2>Telif hakları ve içerik kuralları</h2>
+        <ul>
+          <li>Yalnızca paylaşma hakkına sahip olduğun içerikleri yayımla.</li>
+          <li>Kaynak göstermek her zaman kullanım izni anlamına gelmez.</li>
+          <li>Başkasının kodunu, tasarımını, müziğini veya görselini
+            izinsiz şekilde kendininmiş gibi sunma.</li>
+          <li>Telif bildirimi yaparken ilgili bağlantıyı ve talebinin
+            nedenini açıkla.</li>
+          <li>Bir bildirim yapılması, iddianın otomatik olarak doğru
+            olduğu anlamına gelmez; gerekli inceleme yapılmalıdır.</li>
+        </ul>
+      </section>
+
+      <section class="section searchable" id="itiraz">
+        <h2>İtiraz ve yeniden inceleme</h2>
+        <p>Bir kararın yanlış olduğunu düşünüyorsan aşağıdaki adımları izle:</p>
+        <div class="steps">
+          <div class="step"><div><strong>Kararı belirle</strong><p>Varsa işlem tarihini, içerik bağlantısını ve yaptırım türünü not et.</p></div></div>
+          <div class="step"><div><strong>Gerekçeni açıkla</strong><p>Hangi noktanın hatalı olduğunu ve incelemeye yardımcı olacak bilgileri yaz.</p></div></div>
+          <div class="step"><div><strong>Resmî kanalı kullan</strong><p>Site sahibinin yayımladığı doğrulanmış iletişim veya itiraz kanalına başvur.</p></div></div>
+          <div class="step"><div><strong>Sonucu bekle</strong><p>İnceleme sürerken aynı içeriği tekrar tekrar paylaşarak kısıtlamayı aşmaya çalışma.</p></div></div>
+        </div>
+        <div class="notice">
+          <strong>Not:</strong> Bu HTML dosyası tek başına itirazı göndermez.
+          Gerçek başvuru sistemi için bir arka uç veya e-posta hizmeti gerekir.
+        </div>
+      </section>
+
+      <section class="section searchable" id="bildir">
+        <h2>İhlal bildirim merkezi</h2>
+        <p>
+          Bildirimi olabildiğince açık yaz. Bu örnek form yalnızca cihazında
+          bir bildirim metni oluşturur; sunucuya veya moderasyon ekibine göndermez.
+        </p>
+        <form class="card" id="reportForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="type">İhlal türü</label>
+              <select id="type" required>
+                <option value="">Seçim yap…</option>
+                <option>Taciz veya zorbalık</option>
+                <option>Spam veya sahte hesap</option>
+                <option>Dolandırıcılık / şüpheli bağlantı</option>
+                <option>Mahremiyet ihlali</option>
+                <option>Telif hakkı</option>
+                <option>Güvenlik açığı</option>
+                <option>Diğer</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="link">İçerik bağlantısı (isteğe bağlı)</label>
+              <input id="link" type="url" placeholder="https://…">
+            </div>
+            <div class="field full">
+              <label for="details">Olayın açıklaması</label>
+              <textarea id="details" maxlength="2000" required
+                placeholder="Ne olduğunu kısaca açıkla. Parola veya özel bilgi ekleme."></textarea>
+            </div>
+            <div class="field full">
+              <label>
+                <input type="checkbox" id="confirm" required style="width:auto">
+                Bilerek yanlış bilgi vermediğimi onaylıyorum.
+              </label>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="submit">Bildirim metnini hazırla</button>
+            <button class="btn" type="reset">Temizle</button>
+          </div>
+          <p class="small">
+            Gizlilik: Bu form bilgileri otomatik olarak göndermez.
+            Oluşturulan metni yalnızca doğrulanmış resmî kanala ilet.
+          </p>
+          <div id="result" class="notice hidden" aria-live="polite">
+            <strong>Bildirim metnin hazır.</strong>
+            <textarea id="output" readonly aria-label="Hazırlanan bildirim"></textarea>
+            <button class="btn" type="button" id="copyBtn">Metni kopyala</button>
+            <span id="copyStatus" class="small"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="section searchable" id="sss">
+        <h2>Sık sorulan sorular</h2>
+        <details class="rule">
+          <summary><strong>Bir kuralı ihlal ettiğimi düşünmüyorsam ne yapmalıyım?</strong></summary>
+          <p>Kararın gerekçesini kontrol et ve uygun kanaldan saygılı,
+            somut bir itiraz gönder.</p>
+        </details>
+        <details class="rule">
+          <summary><strong>Bir kullanıcıyı nasıl bildirebilirim?</strong></summary>
+          <p>Yukarıdaki formdan bildirim metni oluşturabilirsin.
+            Formun gönderim yapmadığını unutma; metni doğrulanmış resmî kanala ilet.</p>
+        </details>
+        <details class="rule">
+          <summary><strong>Her ihlalde hesap kapatılır mı?</strong></summary>
+          <p>Hayır. Olayın ağırlığına ve tekrarına göre uyarı,
+            içerik kaldırma, geçici kısıtlama veya daha ağır yaptırımlar uygulanabilir.</p>
+        </details>
+        <details class="rule">
+          <summary><strong>Kurallar değişebilir mi?</strong></summary>
+          <p>Evet. Site sahibi, topluluk ihtiyaçlarına göre kuralları
+            güncelleyebilir ve önemli değişiklikleri duyurabilir.</p>
+        </details>
+        <details class="rule">
+          <summary><strong>Bu sayfa resmî bir hukuk belgesi mi?</strong></summary>
+          <p>Hayır. Bu bir topluluk politikası taslağıdır.
+            Yayımlanmadan önce gerçek hizmet koşullarına göre gözden geçirilmelidir.</p>
+        </details>
+      </section>
+
+      <section class="section searchable" id="guncelleme">
+        <h2>Son güncelleme</h2>
+        <p>Belge sürümü: 1.0 · Son düzenleme: 24 Ekim 2026</p>
+        <p>Bu tarih ve sürüm, site sahibi tarafından güncel tutulmalıdır.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <a class="brand" href="#top"><span class="logo">H</span>HamzaStudio</a>
+    <p>Daha güvenli, saygılı ve yaratıcı bir topluluk için. 🛡️</p>
+    <p>© <span id="year"></span> HamzaStudio · Topluluk kuralları taslağı</p>
+    <a href="#ilkeler">İlkeler</a> ·
+    <a href="#bildir">İhlal bildir</a> ·
+    <a href="#itiraz">İtiraz</a>
+  </div>
+</footer>
+
+<script>
+const menuBtn = document.getElementById("menuBtn");
+const mainNav = document.getElementById("mainNav");
+
+menuBtn.addEventListener("click", () => {
+  const opened = mainNav.classList.toggle("open");
+  menuBtn.setAttribute("aria-expanded", String(opened));
+});
+
+mainNav.querySelectorAll("a").forEach(link => {
+  link.addEventListener("click", () => mainNav.classList.remove("open"));
+});
+
+document.getElementById("year").textContent = new Date().getFullYear();
+
+const search = document.getElementById("search");
+const sections = [...document.querySelectorAll(".searchable")];
+
+search.addEventListener("input", () => {
+  const query = search.value.trim().toLocaleLowerCase("tr");
+  sections.forEach(section => {
+    const match = section.innerText.toLocaleLowerCase("tr").includes(query);
+    section.classList.toggle("hidden", query !== "" && !match);
+  });
+});
+
+const form = document.getElementById("reportForm");
+const result = document.getElementById("result");
+const output = document.getElementById("output");
+const copyStatus = document.getElementById("copyStatus");
+
+form.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const type = document.getElementById("type").value;
+  const link = document.getElementById("link").value.trim();
+  const details = document.getElementById("details").value.trim();
+
+  output.value =
+`HAMZASTUDIO İHLAL BİLDİRİMİ
+İhlal türü: ${type}
+İçerik bağlantısı: ${link || "Belirtilmedi"}
+
+Açıklama:
+${details}
+
+Not: Bu metin hazırlandı ancak gönderilmedi.`;
+
+  result.classList.remove("hidden");
+  copyStatus.textContent = "";
+});
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(output.value);
+    copyStatus.textContent = " Kopyalandı!";
+  } catch {
+    output.focus();
+    output.select();
+    copyStatus.textContent = " Ctrl+C ile kopyalayabilirsin.";
+  }
+});
+
+form.addEventListener("reset", () => {
+  result.classList.add("hidden");
+  copyStatus.textContent = "";
+});
+</script>
+</body>
+</html>
