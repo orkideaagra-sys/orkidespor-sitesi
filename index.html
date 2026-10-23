@@ -232,13 +232,13 @@ aside{display:none}main{border:0}
 /* ============ AYARLAR ============ */
 // 1) GitHub deposu: logo ve oyuncu fotoğrafları buradan otomatik okunur
 //    - Logo: deponun ana klasörüne "logo" adıyla koy (logo.png, logo.jpg ... uzantı fark etmez)
-//    - Oyuncu fotoğrafları: depoda "oyuncular" klasörüne oyuncunun adıyla koy (Ahmet Yılmaz.jpg gibi)
+//    - Oyuncu fotoğrafları: depoda ana klasöre 1.jpeg, 2.png gibi koy (PLAYERS listesindeki photo numarasıyla eşleşir)
 const GITHUB_REPO = "orkideaagra-sys/orkidespor-sitesi";
-const PHOTO_DIR = "oyuncular";
+const PHOTO_DIR = "";   // fotoğraflar deponun ana klasöründe (1.jpeg, 2.png ...). "oyuncular" klasörü kullanacaksan buraya "oyuncular" yaz.
 
 // 1.2) OYUNCULAR: her satır bir oyuncu. Buradan değiştirebilirsin:
 //   name = oyuncunun adı, position = pozisyon, team = takım, number = forma numarası
-//   photo = GitHub'daki "oyuncular" klasöründeki dosyanın adı. UZANTI YAZMAK ZORUNDA DEĞİLSİN:
+//   photo = GitHub deposundaki (ana klasör) fotoğraf dosyasının adı. UZANTI YAZMAK ZORUNDA DEĞİLSİN:
 //           "1" yazarsan 1.jpeg, 1.png, 1.webp ... hangisi varsa onu bulur. İstersen "1.jpeg" diye de yazabilirsin.
 //   photo boş ("") kalırsa, klasörde oyuncunun adıyla aynı isimli bir dosya otomatik aranır.
 // 12'den fazla oyuncu için bir satırı kopyalayıp alta yapıştır.
@@ -554,7 +554,7 @@ function renderPlayers() {
 function listenPlayers() {
   renderPlayers();
   if (photosLoaded) return; photosLoaded = true;
-  listRepo(PHOTO_DIR).then(files => { photoFiles = files.filter(n => IMG_EXT.test(n)); renderPlayers(); }).catch(() => {});
+  listRepo(PHOTO_DIR).then(files => { photoFiles = files.filter(n => IMG_EXT.test(n) && !/^logo\./i.test(n)); renderPlayers(); }).catch(() => {});
 }
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-tag]"); if (!t) return; e.preventDefault();
