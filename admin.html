@@ -54,6 +54,7 @@ dialog form{display:grid;gap:10px}
     <input class="f" id="lp" type="password" placeholder="Şifre" autocomplete="current-password">
     <div class="err" id="lerr"></div>
     <button class="btn">Giriş yap</button>
+    <button class="btn g" type="button" id="lg">Google ile giriş yap</button>
   </form>
 </div>
 
@@ -122,7 +123,7 @@ const firebaseConfig = {
   measurementId: "G-K26JX8HDSM"
 };
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref as dref, push, set, remove, onValue, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const $ = s => document.querySelector(s);
@@ -145,7 +146,12 @@ $("#lf").onsubmit = async e => {
   e.preventDefault(); $("#lerr").textContent = "";
   const raw = $("#lu").value.trim();
   try { await signInWithEmailAndPassword(auth, raw.includes("@") ? raw : nkey(raw) + "@orkidespor.app", $("#lp").value); }
-  catch { $("#lerr").textContent = "Giriş başarısız. Bilgileri kontrol et."; }
+  catch (err) { $("#lerr").textContent = err.code === "auth/invalid-credential" ? "Kullanıcı adı/e-posta veya şifre yanlış. Sitede nasıl giriş yapıyorsan öyle yaz (Google ile giriyorsan aşağıdaki butonu kullan)." : "Giriş başarısız: " + (err.code || err.message); }
+};
+$("#lg").onclick = async () => {
+  $("#lerr").textContent = "";
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch (err) { if (err.code !== "auth/popup-closed-by-user") $("#lerr").textContent = "Google girişi başarısız: " + (err.code || err.message); }
 };
 $("#out").onclick = $("#out0").onclick = () => signOut(auth);
 onAuthStateChanged(auth, async u => {
