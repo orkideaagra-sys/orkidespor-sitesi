@@ -244,8 +244,10 @@ const PHOTO_DIR = "";   // fotoğraflar deponun ana klasöründe (1.jpeg, 2.png 
 // 12'den fazla oyuncu için bir satırı kopyalayıp alta yapıştır.
 const PLAYERS = [
   { name: "Umut Can Çan", position: "Saha", team: "", number: "16", photo: "1" },
+  { name: "Omur Efe Başaran", position: "Defansif orta saha", team: "", number: "09", photo: "2" },
   { name: "Yusuf Aktaş", position: "Sağ kanat", team: "", number: "19", photo: "3" },
   { name: "Ahmet Kerem Ulupınar", position: "Defans", team: "", number: "05", photo: "4" },
+  { name: "Ege Nemli", position: "Defansif orta saha", team: "", number: "04", photo: "5" },
   { name: "Emirhan Günal", position: "Kaleci", team: "", number: "01", photo: "6" },
   { name: "Gökdeniz Güven", position: "Forvet", team: "", number: "99", photo: "7" },
   { name: "Mirhan Kılıç", position: "Defans", team: "", number: "55", photo: "8" },
@@ -442,6 +444,8 @@ $("#send").onclick = async () => {
   if (isMuted()) return;
   if (settings.postsOff && !adminFlag) return alert("Paylaşımlar geçici olarak kapalı.");
   const text = $("#text").value.trim(), vurl = $("#vurl").value.trim();
+  if (badWord(text)) return alert("Yazında yasaklı bir kelime var, lütfen düzenle.");
+  if (slowLeft() > 0) return alert("Yavaş mod: " + slowLeft() + " saniye sonra tekrar paylaşabilirsin.");
   if (!text && !file && !vurl) { $("#perr").textContent = "Bir şeyler yaz ya da video ekle."; return; }
   $("#send").disabled = true; $("#perr").textContent = "";
   try {
@@ -457,6 +461,7 @@ $("#send").onclick = async () => {
       uid: me.uid, author: nameOf(me),
       text, videoUrl, mediaType: file ? (file.type.startsWith("image") ? "image" : "video") : (vurl ? (IMG_EXT.test(vurl.split("?")[0]) ? "image" : "video") : ""), createdAt: serverTimestamp()
     });
+    try { localStorage.setItem("orkide_last_post", String(Date.now())); } catch {}
     $("#text").value = ""; $("#vurl").value = ""; $("#vfile").value = ""; file = null;
     $("#prev").classList.add("hide"); $("#prevImg").classList.add("hide"); $("#cnt").textContent = "0/280";
   } catch (e) { $("#perr").textContent = "Gönderilemedi: " + (e.code || e.message); }
@@ -473,17 +478,18 @@ const linkTags = h => h.replace(/(^|\s)#([\p{L}_][\p{L}\p{N}_]*)/gu, '$1<a href=
 const postHTML = d => {
   const p = d.data(), liked = (p.likes || []).includes(me.uid), open = openSet.has(d.id);
   return `<article class="post"><div class="av">${esc((p.author || "?")[0].toUpperCase())}</div>
-    <div class="pb"><div class="meta"><b>${esc(p.author)}</b> · ${ago(p.createdAt)}</div>
+    <div class="pb"><div class="meta"><b>${esc(p.author)}</b> · ${ago(p.createdAt)}${settings.pinned === d.id ? " · 📌 Sabit" : ""}</div>
     ${p.text ? `<div class="txt">${linkTags(esc(p.text))}</div>` : ""}${mediaHTML(p, d.id)}
     <div class="act"><button data-cbtn="${d.id}">💬 ${p.commentsCount || 0}</button>
     <button data-share="${d.id}">📤</button>
+    ${!isGuest && p.uid !== me.uid ? `<button data-rep="${d.id}">🚩</button>` : ""}
     <button class="${liked ? "liked" : ""}" data-like="${d.id}" data-on="${liked}">${liked ? "♥" : "♡"} ${(p.likes || []).length}</button>
     ${p.uid === me.uid ? `<button class="del" data-del="${d.id}">Sil</button>` : ""}</div>
     <div class="cms ${open ? "" : "hide"}" data-cm="${d.id}">${open ? cmHTML(d.id) : ""}</div></div></article>`;
 };
 function renderFeeds() {
   const ok = d => { const p = d.data(); return !term || (p.text || "").toLowerCase().includes(term) || (p.author || "").toLowerCase().includes(term); };
-  const f = allDocs.filter(ok), mine = allDocs.filter(d => d.data().uid === me.uid);
+  const f = allDocs.filter(ok).sort((x, y) => (y.id === settings.pinned) - (x.id === settings.pinned)), mine = allDocs.filter(d => d.data().uid === me.uid);
   $("#feed").innerHTML = f.length ? f.map(postHTML).join("") : `<div class="empty">${term ? "Aramayla eşleşen gönderi yok." : "Henüz gönderi yok. İlk gönderiyi sen paylaş."}</div>`;
   $("#myfeed").innerHTML = mine.length ? mine.map(postHTML).join("") : '<div class="empty">Henüz gönderin yok.</div>';
   $("#pcount").textContent = mine.length + " gönderi";
@@ -526,7 +532,7 @@ const feedClick = async e => {
 $("#feed").onclick = feedClick; $("#myfeed").onclick = feedClick; $("#findFeed").onclick = feedClick;
 document.addEventListener("submit", async e => {
   const f = e.target.closest("[data-cf]"); if (!f) return; e.preventDefault(); if (isMuted()) return;
-  const inp = f.querySelector("input"), text = inp.value.trim(); if (!text) return;
+  const inp = f.querySelector("input"), text = inp.value.trim(); if (!text) return; if (badWord(text)) return alert("Yorumunda yasaklı bir kelime var.");
   inp.value = "";
   await push(dref(db, "comments/" + f.dataset.cf), { uid: me.uid, author: nameOf(me), text, createdAt: serverTimestamp() });
   runTransaction(dref(db, `posts/${f.dataset.cf}/commentsCount`), n => (n || 0) + 1);
@@ -595,7 +601,7 @@ $("#dmUsers").onclick = e => { const b = e.target.closest("[data-dm]"); if (b) o
 $("#dmSearch").oninput = renderUsers;
 $("#dmBack").onclick = () => { chatUnsub?.(); chatWith = null; $("#dmChat").classList.add("hide"); $("#dmList").classList.remove("hide"); };
 $("#dmForm").onsubmit = async e => {
-  e.preventDefault(); if (isMuted()) return; if (settings.dmOff && !adminFlag) return alert("Mesajlaşma geçici olarak kapalı."); const t = $("#dmText").value.trim(); if (!t || !chatWith) return; $("#dmText").value = "";
+  e.preventDefault(); if (isMuted()) return; if (settings.dmOff && !adminFlag) return alert("Mesajlaşma geçici olarak kapalı."); const t = $("#dmText").value.trim(); if (!t || !chatWith) return; if (badWord(t)) return alert("Mesajında yasaklı bir kelime var."); $("#dmText").value = "";
   try { await push(dref(db, "dms/" + chatId(me.uid, chatWith)), { from: me.uid, text: t, createdAt: serverTimestamp() }); }
   catch (err) { alert("Mesaj gönderilemedi: " + (err.code || err.message)); }
 };
@@ -698,8 +704,30 @@ function applySettings() {
   $("#maint").classList.toggle("hide", !m);
   $("#maintMsg").textContent = settings.maintMsg || "Site bakımda. Lütfen daha sonra tekrar dene.";
 }
-onValue(dref(db, "settings"), s => { settings = s.val() || {}; applySettings(); }, () => {});
+onValue(dref(db, "settings"), s => { settings = s.val() || {}; applySettings(); if (me) renderFeeds(); }, () => {});
 $("#warnOk").onclick = () => remove(dref(db, "warnings/" + me.uid)).catch(() => {});
+
+/* ---------- Otomatik moderasyon + şikayet ---------- */
+const normT = x => x.toLocaleLowerCase("tr").replace(/ı/g, "i").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+function badWord(text) {
+  const ws = (settings.badWords || "").split(",").map(w => normT(w).trim()).filter(Boolean);
+  if (!ws.length || adminFlag) return false;
+  const toks = normT(text).split(/[^a-z0-9]+/).filter(Boolean);
+  return toks.some(k => ws.some(w => k === w || (w.length >= 5 && k.includes(w))));
+}
+function slowLeft() {
+  if (!settings.slowSec || adminFlag) return 0;
+  let last = 0; try { last = +localStorage.getItem("orkide_last_post") || 0; } catch {}
+  return Math.max(0, Math.ceil((last + settings.slowSec * 1000 - Date.now()) / 1000));
+}
+document.addEventListener("click", e => {
+  const rp = e.target.closest("[data-rep]"); if (!rp) return;
+  const d = allDocs.find(x => x.id === rp.dataset.rep); if (!d) return;
+  const reason = prompt("Bu gönderiyi neden şikayet ediyorsun? (isteğe bağlı)"); if (reason === null) return;
+  const p = d.data();
+  push(dref(db, "reports"), { postId: d.id, author: p.author, text: (p.text || "[medya]").slice(0, 160), reason: reason.trim(), by: nameOf(me), byUid: me.uid, at: serverTimestamp() })
+    .then(() => alert("Şikayetin yöneticilere iletildi.")).catch(err => alert("Gönderilemedi: " + (err.code || err.message)));
+});
 </script>
 </body>
 </html>
