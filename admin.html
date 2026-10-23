@@ -29,7 +29,7 @@ main{max-width:980px;margin:0 auto;padding:0 14px}
 .tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
 .tabs button{white-space:nowrap}.tabs .on{background:var(--green);color:#042;border-color:var(--green)}
 .item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.item>div:first-child{flex:1;min-width:200px}
+.item>div:not(.acts){flex:1;min-width:200px}
 .acts{display:flex;gap:6px;flex-wrap:wrap}
 .meta{color:var(--mute);font-size:13px;word-break:break-all}
 .b{font-size:12px;padding:2px 9px;border-radius:999px;font-weight:700;margin-left:6px}
@@ -43,6 +43,11 @@ dialog::backdrop{background:rgba(0,0,0,.65)}
 dialog form{display:grid;gap:10px}
 .empty{padding:30px;text-align:center;color:var(--mute)}
 .sw{display:flex;gap:10px;align-items:center;padding:6px 0}.sw input{width:22px;height:22px;accent-color:var(--green)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding:20px 0 22px}
+.bar{flex:1;background:linear-gradient(var(--green),#16906a);border-radius:6px 6px 0 0;position:relative;min-height:3px}
+.bar i{position:absolute;top:-18px;left:0;right:0;text-align:center;font-style:normal;font-size:12px}
+.bar small{position:absolute;bottom:-20px;left:0;right:0;text-align:center;color:var(--mute);font-size:11px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
 .err{color:var(--red);font-size:14px;min-height:18px}
 </style>
 </head>
@@ -73,11 +78,12 @@ dialog form{display:grid;gap:10px}
 </div>
 
 <div id="panel" class="hide">
-  <header>🛡️ Orkide Yönetim <span id="me"></span><button class="btn g s" id="out">Çıkış</button></header>
+  <header>🛡️ Orkide Yönetim <span id="me"></span><button class="btn r s" id="lock" data-patron>🚨 Siteyi kilitle</button><button class="btn g s" id="out">Çıkış</button></header>
   <main>
     <div class="stats" id="stats"></div>
     <div class="tabs" id="tabs">
       <button class="btn g on" data-t="users">👥 Kullanıcılar</button>
+      <button class="btn g" data-t="an">📊 Analiz</button>
       <button class="btn g" data-t="posts">📝 Gönderiler</button>
       <button class="btn g" data-t="stories">🎞️ Hikayeler</button>
       <button class="btn g" data-t="comments">💬 Yorumlar</button>
@@ -91,6 +97,10 @@ dialog form{display:grid;gap:10px}
 
     <section id="t-users">
       <input class="f" id="us" placeholder="Kullanıcı ara (ad veya UID)" style="margin-top:12px">
+      <div class="acts" style="margin-top:8px">
+        <select class="f" id="uf" style="width:auto"><option value="all">Hepsi</option><option value="online">🟢 Çevrimiçi</option><option value="banned">Yasaklı</option><option value="muted">Susturulmuş</option><option value="mods">Moderatörler</option><option value="noposts">Hiç paylaşmayan</option></select>
+        <select class="f" id="usort" style="width:auto"><option value="name">Ada göre</option><option value="posts">Gönderi sayısına göre</option><option value="online">Çevrimiçi önce</option></select>
+      </div>
       <div id="ul"></div>
       <div class="box" style="margin-top:14px">
         <b>Kişi ekle</b>
@@ -100,9 +110,17 @@ dialog form{display:grid;gap:10px}
         <button class="btn" id="nadd">Ekle</button>
       </div>
     </section>
-    <section id="t-posts" class="hide"><input class="f" id="ps" placeholder="Gönderi veya kişi ara" style="margin-top:12px"><div id="pl"></div></section>
+    <section id="t-an" class="hide"><div id="an"></div></section>
+    <section id="t-posts" class="hide">
+      <input class="f" id="ps" placeholder="Gönderi veya kişi ara" style="margin-top:12px">
+      <div class="acts" style="margin-top:8px;align-items:center">
+        <select class="f" id="pf" style="width:auto"><option value="all">Hepsi</option><option value="media">Sadece medyalı</option><option value="text">Sadece yazı</option><option value="today">Bugün</option><option value="week">Son 7 gün</option></select>
+        <button class="btn r s" id="bulkDel">Seçilenleri sil</button><span class="meta" id="selCount"></span>
+      </div>
+      <div id="pl"></div>
+    </section>
     <section id="t-stories" class="hide"><button class="btn g s" id="cleanSt" style="margin-top:12px">Süresi dolan hikayeleri temizle</button><div class="thumbs" id="sl"></div></section>
-    <section id="t-comments" class="hide"><div id="cl"></div></section>
+    <section id="t-comments" class="hide"><input class="f" id="cs" placeholder="Yorum veya kişi ara" style="margin-top:12px"><div id="cl"></div></section>
     <section id="t-reports" class="hide"><div id="rl"></div></section>
     <section id="t-mods" class="hide">
       <div class="box" style="margin-top:12px">
@@ -131,16 +149,16 @@ dialog form{display:grid;gap:10px}
         <button class="btn g s" id="bwSave" style="justify-self:start">Kelime listesini kaydet</button>
       </div>
     </section>
-    <section id="t-bans" class="hide"><div id="bl"></div></section>
+    <section id="t-bans" class="hide"><button class="btn g s" id="cleanBans" data-patron style="margin-top:12px">Süresi dolan yasakları temizle</button><div id="bl"></div></section>
     <section id="t-ann" class="hide">
       <div class="box" style="margin-top:12px">
         <div id="annNow" class="meta"></div>
         <textarea class="f" id="at" maxlength="200" rows="3" placeholder="Sitede herkese görünecek duyuru"></textarea>
         <select class="f" id="ad"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7">7 gün</option></select>
-        <div class="acts"><button class="btn" id="annSave">Yayınla</button><button class="btn g" id="annDel">Duyuruyu kaldır</button></div>
+        <div class="acts"><button class="btn" id="annSave">Yayınla</button><button class="btn g" id="annDel">Duyuruyu kaldır</button><button class="btn a" id="massWarn">⚠️ Herkese uyarı gönder</button></div>
       </div>
     </section>
-    <section id="t-log" class="hide"><div id="gl"></div></section>
+    <section id="t-log" class="hide"><div class="acts" style="margin-top:12px"><input class="f" id="gs" placeholder="Kayıtlarda ara" style="flex:1"><button class="btn g s" id="logCsv">CSV indir</button></div><div id="gl"></div></section>
   </main>
 </div>
 
@@ -154,6 +172,7 @@ dialog form{display:grid;gap:10px}
       <option value="c">Gün sayısı seç…</option><option value="0">Kalıcı</option>
     </select>
     <input class="f hide" id="bcus" type="number" min="1" max="3650" placeholder="Kaç gün?">
+    <select class="f" id="brt"><option value="">Hazır sebep seç…</option><option>Spam / reklam</option><option>Hakaret / küfür</option><option>Uygunsuz içerik</option><option>Taciz</option><option>Sahte hesap</option><option>Kural ihlali</option></select>
     <input class="f" id="brs" maxlength="120" placeholder="Sebep (kullanıcıya gösterilir)">
     <div class="acts"><button class="btn r" id="bok" value="ok">Uygula</button><button class="btn g" type="button" id="bno">Vazgeç</button></div>
   </form>
@@ -181,9 +200,12 @@ const fmt = ts => ts ? new Date(ts).toLocaleString("tr-TR") : "-";
 const live = b => b && (b.until === 0 || b.until > Date.now());
 const left = u => u === 0 ? "kalıcı" : Math.max(1, Math.ceil((u - Date.now()) / 864e5)) + " gün kaldı";
 
+const csvOf = rows => "\ufeff" + rows.map(r => r.map(x => '"' + String(x ?? "").replace(/"/g, '""') + '"').join(",")).join("\n");
+const dl = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1500); };
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
 let me = null, myName = "", started = false, banTarget = null;
-let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {};
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {};
+const sel = new Set();
 const chatId = (a, b) => [a, b].sort().join("_");
 const can = p => role === "patron" || perms[p] === true;
 
@@ -238,7 +260,7 @@ function start() {
   w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
   w("bans", v => bans = v);
   if (role === "patron") { w("adminlog", v => logs = v); w("mods", v => mods = v); w("modrequests", v => modreq = v); }
-  w("reports", v => reports = v); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
+  w("reports", v => reports = v); w("presence", v => presence = v); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
   onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
   $("#modlink").value = location.origin + location.pathname + "?mod=1";
 }
@@ -249,13 +271,18 @@ function render() {
   const st = [["Kullanıcı", Object.keys(known()).length], ["Gönderi", Object.keys(posts).length],
     ["Bugünkü gönderi", Object.values(posts).filter(p => p.createdAt > day).length],
     ["Aktif hikaye", Object.values(stories).filter(s => Date.now() - s.createdAt < 864e5).length],
-    ["Aktif yasak", Object.values(bans).filter(live).length], ["Açık şikayet", Object.keys(reports).length]];
+    ["Aktif yasak", Object.values(bans).filter(live).length], ["Açık şikayet", Object.keys(reports).length], ["Çevrimiçi", Object.values(presence).filter(Boolean).length]];
   $("#stats").innerHTML = st.map(([k, v]) => `<div class="st"><b>${v}</b><small>${k}</small></div>`).join("");
 
   const cnt = {}; Object.values(posts).forEach(p => cnt[p.uid] = (cnt[p.uid] || 0) + 1);
   const q = $("#us").value.trim(), qk = nkey(q);
   const ul = Object.entries(known()).filter(([id, u]) => !q || nkey(u.name || "").includes(qk) || id.includes(q))
-    .sort((a, b) => (a[1].name || "").localeCompare(b[1].name || "", "tr"));
+    .filter(([id]) => { const f = $("#uf").value, b = bans[id];
+      return f === "all" || (f === "online" && presence[id]) || (f === "banned" && live(b) && b.type !== "mute") || (f === "muted" && live(b) && b.type === "mute") || (f === "mods" && mods[id]) || (f === "noposts" && !cnt[id]); })
+    .sort((a, b) => { const so = $("#usort").value;
+      if (so === "posts") return (cnt[b[0]] || 0) - (cnt[a[0]] || 0);
+      if (so === "online") return (presence[b[0]] ? 1 : 0) - (presence[a[0]] ? 1 : 0);
+      return (a[1].name || "").localeCompare(b[1].name || "", "tr"); });
   $("#ul").innerHTML = ul.length ? ul.map(([id, u]) => {
     const b = live(bans[id]) ? bans[id] : null;
     const badge = b ? `<span class="b ${b.type === "mute" ? "mute" : "ban"}">${b.type === "mute" ? "Susturuldu" : "Yasaklı"} · ${left(b.until)}</span>` : "";
@@ -263,18 +290,20 @@ function render() {
     const acts = [];
     if (can("mute") || can("ban")) acts.push(b ? bt("g", "unban", "Yasağı kaldır") : bt("a", "ban", "Yasakla / Sustur"));
     if (can("warn")) acts.push(bt("a", "warn", "⚠️ Uyarı gönder"));
+    acts.push(bt("g", "info", "ℹ️ Detay"));
     acts.push(bt("g", "note", "📝 Not (" + Object.keys(notes[id] || {}).length + ")"));
     if (can("del")) acts.push(bt("g", "wipe", "İçerikleri sil"));
     if (role === "patron") { acts.push(bt("g", "mail", "Şifre e-postası")); acts.push(mods[id] ? bt("g", "rmmod", "Moderatörlüğü al") : bt("g", "mkmod", "🛡️ Moderatör yap")); acts.push(bt("r", "del", "Hesabı sil")); }
-    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${mods[id] ? '<span class="b mod">Moderatör</span>' : ""}${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div><div class="acts">${acts.join("")}</div></div>`;
+    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${mods[id] ? '<span class="b mod">Moderatör</span>' : ""}${presence[id] ? '<span class="b mod" style="background:#3ddc97">çevrimiçi</span>' : ""}${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div><div class="acts">${acts.join("")}</div></div>`;
   }).join("") : '<div class="empty">Kullanıcı yok. Kullanıcılar siteye girdikçe veya paylaşım yaptıkça burada görünür. Eksik birini aşağıdaki "Kişi ekle" ile elle ekleyebilirsin.</div>';
 
   const pq = nkey($("#ps").value);
+  const pf = $("#pf").value, pfOk = p => pf === "all" || (pf === "media" && p.videoUrl) || (pf === "text" && !p.videoUrl) || (pf === "today" && p.createdAt > day) || (pf === "week" && p.createdAt > Date.now() - 7 * 864e5);
   const pl = Object.entries(posts).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0))
-    .filter(([, p]) => !pq || nkey((p.text || "") + (p.author || "")).includes(pq));
-  $("#pl").innerHTML = pl.length ? pl.map(([id, p]) => `<div class="item"><div><b>${esc(p.author)}</b> <span class="meta">${fmt(p.createdAt)}</span>
+    .filter(([, p]) => (!pq || nkey((p.text || "") + (p.author || "")).includes(pq)) && pfOk(p));
+  $("#pl").innerHTML = pl.length ? pl.map(([id, p]) => `<div class="item">${can("del") ? `<input type="checkbox" class="pchk" data-id="${esc(id)}" ${sel.has(id) ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--green)">` : ""}<div><b>${esc(p.author)}</b> <span class="meta">${fmt(p.createdAt)}</span>${p.edited ? " <span class=\"meta\">(düzenlendi)</span>" : ""}
     <div class="txt">${esc(p.text)}</div>${p.videoUrl ? `<div class="meta">${p.mediaType === "image" ? "🖼️ foto" : "🎬 video"}: <a href="${esc(p.videoUrl)}" target="_blank" rel="noopener" style="color:var(--green)">aç</a></div>` : ""}</div>
-    <div class="acts"><button class="btn g s" data-a="pin" data-u="${esc(id)}">${settings.pinned === id ? "📌 Sabiti kaldır" : "📌 Sabitle"}</button>${can("del") ? `<button class="btn r s" data-a="dpost" data-u="${esc(id)}">Sil</button>` : ""}</div></div>`).join("") : '<div class="empty">Gönderi yok.</div>';
+    <div class="acts"><button class="btn g s" data-a="pin" data-u="${esc(id)}">${settings.pinned === id ? "📌 Sabiti kaldır" : "📌 Sabitle"}</button>${can("del") ? `<button class="btn g s" data-a="pedit" data-u="${esc(id)}">Düzenle</button><button class="btn r s" data-a="dpost" data-u="${esc(id)}">Sil</button>` : ""}</div></div>`).join("") : '<div class="empty">Gönderi yok.</div>';
 
   const sl = Object.entries(stories).sort((a, b) => b[1].createdAt - a[1].createdAt);
   $("#sl").innerHTML = sl.length ? sl.map(([id, s]) => `<div class="th">${s.type === "image" ? `<img src="${esc(s.url)}" alt="" loading="lazy">` : `<video src="${esc(s.url)}" controls preload="metadata"></video>`}
@@ -286,6 +315,26 @@ function render() {
     <div class="meta">${live(b) ? left(b.until) + " (bitiş: " + (b.until === 0 ? "yok" : fmt(b.until)) + ")" : "süresi doldu"} · Sebep: ${esc(b.reason || "-")} · ${esc(b.by || "")} · ${fmt(b.at)}</div></div>
     <div class="acts"><button class="btn g s" data-a="unban" data-u="${esc(id)}">Kaldır</button></div></div>`).join("") : '<div class="empty">Yasak kaydı yok.</div>';
 
+  $("#lock").textContent = settings.maintenance ? "🔓 Kilidi aç" : "🚨 Siteyi kilitle";
+  const dayMs = 864e5, days = [...Array(7)].map((_, i) => day - (6 - i) * dayMs);
+  const per = days.map(d => Object.values(posts).filter(p => p.createdAt >= d && p.createdAt < d + dayMs).length), mx = Math.max(1, ...per);
+  const tp = (arr, n = 5) => arr.sort((a, b) => b[1] - a[1]).slice(0, n);
+  const li = (rows, f) => rows.length ? rows.map(f).join("") : '<div class="meta">Veri yok.</div>';
+  const byU = {}; Object.values(posts).forEach(p => byU[p.uid] = (byU[p.uid] || 0) + 1);
+  const snip = id => esc((posts[id].text || "[medya]").slice(0, 36));
+  const repU = {}; Object.values(reports).forEach(r => repU[r.author] = (repU[r.author] || 0) + 1);
+  const onl = Object.entries(presence).filter(([, v]) => v).map(([id]) => nameOf(id));
+  const act = {}; Object.values(logs).forEach(l => act[l.by] = (act[l.by] || 0) + 1);
+  $("#an").innerHTML = `<div class="box" style="margin-top:12px"><b>📈 Son 7 gün gönderi sayısı</b><div class="bars">${per.map((n, i) => `<div class="bar" style="height:${Math.max(3, n / mx * 100)}px"><i>${n}</i><small>${new Date(days[i]).toLocaleDateString("tr-TR", { weekday: "short" })}</small></div>`).join("")}</div></div>
+    <div class="grid2">
+      <div class="box"><b>🏆 En aktif kullanıcılar</b>${li(tp(Object.entries(byU)), ([id, n]) => `<div class="meta">${esc(nameOf(id))} — ${n} gönderi</div>`)}</div>
+      <div class="box"><b>❤️ En çok beğenilen gönderiler</b>${li(tp(Object.entries(posts).map(([id, p]) => [id, Object.keys(p.likes || {}).length])).filter(r => r[1] > 0), ([id, n]) => `<div class="meta">${esc(posts[id].author)}: ${snip(id)} — ${n} ❤</div>`)}</div>
+      <div class="box"><b>💬 En çok yorumlanan gönderiler</b>${li(tp(Object.entries(posts).map(([id, p]) => [id, p.commentsCount || 0])).filter(r => r[1] > 0), ([id, n]) => `<div class="meta">${esc(posts[id].author)}: ${snip(id)} — ${n} yorum</div>`)}</div>
+      <div class="box"><b>🚩 En çok şikayet edilenler</b>${li(tp(Object.entries(repU)), ([n, c]) => `<div class="meta">${esc(n)} — ${c} açık şikayet</div>`)}</div>
+      <div class="box"><b>🟢 Şu an çevrimiçi (${onl.length})</b>${onl.length ? `<div class="meta">${onl.map(esc).join(", ")}</div>` : '<div class="meta">Kimse yok.</div>'}</div>
+      ${role === "patron" ? `<div class="box"><b>🛡️ Ekip işlem sayısı</b>${li(tp(Object.entries(act), 8), ([n, c]) => `<div class="meta">${esc(n)} — ${c} işlem</div>`)}</div>` : ""}
+    </div>
+    <div class="box" style="margin-top:10px"><b>📦 Dışa aktar</b><div class="acts"><button class="btn g s" data-a="csv">👥 Kullanıcıları CSV indir</button>${role === "patron" ? '<button class="btn g s" data-a="backup">💾 Tüm veriyi yedekle (JSON)</button>' : ""}</div></div>`;
   const rqs = Object.entries(modreq);
   $("#rq").innerHTML = rqs.length ? rqs.map(([id, r]) => `<div class="item"><div><b>${esc(r.name)}</b> <span class="meta">${fmt(r.at)}</span><div class="meta">${esc(id)}</div></div>
     <div class="acts"><button class="btn s" data-a="mapprove" data-u="${esc(id)}">Onayla</button><button class="btn g s" data-a="mreject" data-u="${esc(id)}">Reddet</button></div></div>`).join("") : '<div class="empty">Bekleyen başvuru yok.</div>';
@@ -300,20 +349,21 @@ function render() {
   if (document.activeElement !== $("#bw")) $("#bw").value = settings.badWords || "";
   const cm = []; Object.entries(comments).forEach(([pid, l]) => Object.entries(l || {}).forEach(([cid, c]) => cm.push({ pid, cid, ...c })));
   cm.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  $("#cl").innerHTML = cm.length ? cm.slice(0, 200).map(c => `<div class="item"><div><b>${esc(c.author)}</b> <span class="meta">${fmt(c.createdAt)}</span><div class="txt">${esc(c.text)}</div></div>
+  const cq = nkey($("#cs").value), cmf = cq ? cm.filter(c => nkey((c.text || "") + (c.author || "")).includes(cq)) : cm;
+  $("#cl").innerHTML = cmf.length ? cmf.slice(0, 200).map(c => `<div class="item"><div><b>${esc(c.author)}</b> <span class="meta">${fmt(c.createdAt)}</span><div class="txt">${esc(c.text)}</div></div>
     <div class="acts">${can("del") ? `<button class="btn r s" data-a="dcom" data-u="${esc(c.pid)}" data-c="${esc(c.cid)}">Sil</button>` : ""}</div></div>`).join("") : '<div class="empty">Yorum yok.</div>';
   document.querySelectorAll("[data-set]").forEach(c => c.checked = c.hasAttribute("data-inv") ? !settings[c.dataset.set] : !!settings[c.dataset.set]);
   if (document.activeElement !== $("#maintMsg")) $("#maintMsg").value = settings.maintMsg || "";
   const ok = ann && ann.text && (!ann.until || ann.until > Date.now());
   $("#annNow").textContent = ok ? "Yayındaki duyuru: " + ann.text + (ann.until ? " (bitiş: " + fmt(ann.until) + ")" : " (süresiz)") : "Şu an duyuru yok.";
-  const gl = Object.values(logs).slice(-60).reverse();
+  const gq = nkey($("#gs").value), gl = Object.values(logs).filter(l => !gq || nkey((l.action || "") + (l.target || "") + (l.by || "")).includes(gq)).slice(-200).reverse();
   $("#gl").innerHTML = gl.length ? gl.map(l => `<div class="item"><div><b>${esc(l.action)}</b> <span class="meta">→ ${esc(l.target)}</span><div class="meta">${esc(l.by)} · ${fmt(l.at)}</div></div></div>`).join("") : '<div class="empty">Kayıt yok.</div>';
 }
 $("#us").oninput = $("#ps").oninput = render;
 $("#tabs").onclick = e => {
   const b = e.target.closest("[data-t]"); if (!b) return;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-  ["users", "posts", "stories", "comments", "reports", "bans", "mods", "ann", "set", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["users", "an", "posts", "stories", "comments", "reports", "bans", "mods", "ann", "set", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
 };
 
 /* ---- İşlemler ---- */
@@ -332,12 +382,12 @@ async function setBan(uid, type, days, reason) {
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b) return;
   const a = b.dataset.a, id = b.dataset.u, cid = b.dataset.c;
-  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
+  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject", "backup"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
   if (["wipe", "dpost", "dstory", "dcom", "rdel"].includes(a) && !can("del")) return alert("Silme yetkin yok.");
   if (a === "ban" && !(can("mute") || can("ban"))) return alert("Yasaklama yetkin yok.");
   if (a === "warn" && !can("warn")) return alert("Uyarı gönderme yetkin yok.");
   try {
-    if (a === "ban") { banTarget = id; $("#bt").textContent = nameOf(id) + " — yasakla / sustur"; $("#brs").value = "";
+    if (a === "ban") { banTarget = id; $("#bt").textContent = nameOf(id) + " — yasakla / sustur"; $("#brs").value = ""; $("#brt").value = "";
       [...$("#btype").options].forEach(o => o.hidden = o.disabled = !(role === "patron" || perms[o.value]));
       $("#btype").value = ([...$("#btype").options].find(o => !o.disabled) || {}).value || "mute";
       [...$("#bdur").options].forEach(o => o.hidden = o.disabled = role !== "patron" && !["1", "3", "7"].includes(o.value));
@@ -381,8 +431,27 @@ document.addEventListener("click", async e => {
       await remove(dref(db, "posts/" + cid)); await remove(dref(db, "comments/" + cid)); await remove(dref(db, "reports/" + id)); log("Şikayet üzerine gönderi silindi", cid);
     }
     if (a === "rok") { await remove(dref(db, "reports/" + id)); log("Şikayet kapatıldı", reports[id]?.author || id); }
+    if (a === "info") {
+      const u = known()[id] || {}, my = Object.values(posts).filter(p => p.uid === id), b = bans[id];
+      const lk = my.reduce((n, p) => n + Object.keys(p.likes || {}).length, 0), last = my.reduce((m, p) => Math.max(m, p.createdAt || 0), 0);
+      const st = live(b) ? (b.type === "mute" ? "Susturulmuş" : "Yasaklı") + " (" + left(b.until) + ")" : "Normal";
+      alert((u.name || "?") + "\nUID: " + id + "\nDurum: " + st + "\nÇevrimiçi: " + (presence[id] ? "evet" : "hayır") + "\nBio: " + (u.bio || "-") +
+        "\nGönderi: " + my.length + " · Aldığı beğeni: " + lk + "\nSon gönderi: " + (last ? fmt(last) : "-") +
+        "\nNot sayısı: " + Object.keys(notes[id] || {}).length + "\nAçık şikayet: " + Object.values(reports).filter(r => r.author === u.name).length);
+    }
+    if (a === "pedit") {
+      const p = posts[id], t = prompt("Gönderi metnini düzenle:", p?.text || ""); if (t === null) return;
+      await update(dref(db, "posts/" + id), { text: t.trim().slice(0, 280), edited: true }); log("Gönderi düzenlendi", p?.author || id);
+    }
+    if (a === "csv") {
+      const cnt = {}; Object.values(posts).forEach(p => cnt[p.uid] = (cnt[p.uid] || 0) + 1);
+      dl("kullanicilar.csv", csvOf([["Ad", "UID", "Gönderi", "Durum", "Çevrimiçi"], ...Object.entries(known()).map(([uid, u]) => [u.name || "", uid, cnt[uid] || 0, live(bans[uid]) ? (bans[uid].type === "mute" ? "Susturulmuş" : "Yasaklı") : "Normal", presence[uid] ? "evet" : "hayır"])]), "text/csv");
+    }
+    if (a === "backup") dl("orkide-yedek-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify({ exportedAt: Date.now(), users, posts, stories, comments, bans, settings, mods, reports, notes }, null, 2), "application/json");
     if (a === "warn") {
-      const t = prompt(nameOf(id) + " kullanıcısına gidecek uyarı mesajı:"); if (!t || !t.trim()) return;
+      const WT = ["Lütfen kurallara uy; tekrarında hesabın yasaklanabilir.", "Spam / reklam paylaşımı yapma.", "Hakaret ve küfür içeren paylaşımlar yasaktır.", "Uygunsuz içerik paylaşma.", "Diğer kullanıcılara saygılı ol."];
+      let t = prompt(nameOf(id) + " kullanıcısına uyarı.\nHazır mesaj için 1-5 yaz veya kendi mesajını yaz:\n" + WT.map((x, i) => (i + 1) + ") " + x).join("\n")); if (!t || !t.trim()) return;
+      if (/^[1-5]$/.test(t.trim())) t = WT[+t.trim() - 1];
       await update(dref(db, "users/" + me.uid), { name: myName });
       await push(dref(db, "dms/" + chatId(me.uid, id)), { from: me.uid, text: "⚠️ Yönetici uyarısı: " + t.trim(), createdAt: serverTimestamp() });
       await push(dref(db, "warnings/" + id), { text: t.trim(), by: myName, at: serverTimestamp() });
@@ -432,6 +501,38 @@ document.addEventListener("change", async e => {
 $("#copylink").onclick = () => { $("#modlink").select(); navigator.clipboard?.writeText($("#modlink").value).then(() => alert("Bağlantı kopyalandı.")).catch(() => {}); };
 $("#slowSave").onclick = async () => { await set(dref(db, "settings/slowSec"), Math.max(0, parseInt($("#slow").value, 10) || 0)); log("Yavaş mod güncellendi", "site"); alert("Kaydedildi."); };
 $("#bwSave").onclick = async () => { await set(dref(db, "settings/badWords"), $("#bw").value.trim()); log("Yasaklı kelime listesi güncellendi", "site"); alert("Kaydedildi."); };
+$("#brt").onchange = () => { if ($("#brt").value) $("#brs").value = $("#brt").value; };
+$("#uf").onchange = $("#usort").onchange = $("#pf").onchange = render;
+$("#cs").oninput = $("#gs").oninput = render;
+document.addEventListener("change", e => {
+  const c = e.target.closest(".pchk"); if (!c) return;
+  c.checked ? sel.add(c.dataset.id) : sel.delete(c.dataset.id);
+  $("#selCount").textContent = sel.size ? sel.size + " seçili" : "";
+});
+$("#bulkDel").onclick = async () => {
+  if (!can("del")) return alert("Silme yetkin yok.");
+  if (!sel.size) return alert("Önce silmek istediğin gönderileri seç.");
+  if (!confirm(sel.size + " gönderi silinsin mi?")) return;
+  const ids = [...sel];
+  try { await Promise.all(ids.flatMap(id => [remove(dref(db, "posts/" + id)), remove(dref(db, "comments/" + id))])); sel.clear(); $("#selCount").textContent = ""; log("Toplu gönderi silme (" + ids.length + ")", "-"); }
+  catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); }
+};
+$("#cleanBans").onclick = async () => {
+  const old = Object.keys(bans).filter(id => !live(bans[id])); if (!old.length) return alert("Süresi dolan yasak yok.");
+  await Promise.all(old.map(id => remove(dref(db, "bans/" + id)))); log("Süresi dolan yasaklar temizlendi (" + old.length + ")", "-");
+};
+$("#massWarn").onclick = async () => {
+  const t = prompt("Tüm kullanıcılara gidecek uyarı mesajı:"); if (!t || !t.trim()) return;
+  const ids = Object.keys(known()); if (!confirm(ids.length + " kullanıcıya uyarı gönderilsin mi?")) return;
+  await Promise.all(ids.map(id => push(dref(db, "warnings/" + id), { text: t.trim(), by: myName, at: serverTimestamp() })));
+  log("Toplu uyarı (" + ids.length + ")", t.trim().slice(0, 40)); alert("Gönderildi.");
+};
+$("#lock").onclick = async () => {
+  const on = !settings.maintenance;
+  if (!confirm(on ? "Site herkese kapatılsın mı? (Yöneticiler girebilir)" : "Site yeniden açılsın mı?")) return;
+  await set(dref(db, "settings/maintenance"), on); log(on ? "ACİL: Site kilitlendi" : "Site kilidi açıldı", "site");
+};
+$("#logCsv").onclick = () => dl("kayit.csv", csvOf([["Tarih", "Kişi", "İşlem", "Hedef"], ...Object.values(logs).map(l => [fmt(l.at), l.by, l.action, l.target])]), "text/csv");
 $("#annSave").onclick = async () => {
   const t = $("#at").value.trim(); if (!t) return alert("Duyuru metni yaz.");
   const d = parseInt($("#ad").value, 10);
