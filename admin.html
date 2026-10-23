@@ -42,6 +42,7 @@ dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);bo
 dialog::backdrop{background:rgba(0,0,0,.65)}
 dialog form{display:grid;gap:10px}
 .empty{padding:30px;text-align:center;color:var(--mute)}
+.sw{display:flex;gap:10px;align-items:center;padding:6px 0}.sw input{width:22px;height:22px;accent-color:var(--green)}
 .err{color:var(--red);font-size:14px;min-height:18px}
 </style>
 </head>
@@ -76,8 +77,10 @@ dialog form{display:grid;gap:10px}
       <button class="btn g on" data-t="users">👥 Kullanıcılar</button>
       <button class="btn g" data-t="posts">📝 Gönderiler</button>
       <button class="btn g" data-t="stories">🎞️ Hikayeler</button>
+      <button class="btn g" data-t="comments">💬 Yorumlar</button>
       <button class="btn g" data-t="bans">⛔ Yasaklar</button>
       <button class="btn g" data-t="ann">📢 Duyuru</button>
+      <button class="btn g" data-t="set">⚙️ Site Ayarları</button>
       <button class="btn g" data-t="log">📜 Kayıt</button>
     </div>
 
@@ -93,7 +96,20 @@ dialog form{display:grid;gap:10px}
       </div>
     </section>
     <section id="t-posts" class="hide"><input class="f" id="ps" placeholder="Gönderi veya kişi ara" style="margin-top:12px"><div id="pl"></div></section>
-    <section id="t-stories" class="hide"><div class="thumbs" id="sl"></div></section>
+    <section id="t-stories" class="hide"><button class="btn g s" id="cleanSt" style="margin-top:12px">Süresi dolan hikayeleri temizle</button><div class="thumbs" id="sl"></div></section>
+    <section id="t-comments" class="hide"><div id="cl"></div></section>
+    <section id="t-set" class="hide">
+      <div class="box" style="margin-top:12px">
+        <b>Site ayarları</b>
+        <label class="sw"><input type="checkbox" data-set="maintenance"> 🛠️ Bakım modu (yöneticiler dışında herkese kapalı)</label>
+        <input class="f" id="maintMsg" maxlength="140" placeholder="Bakım mesajı">
+        <button class="btn g s" id="maintSave" style="justify-self:start">Mesajı kaydet</button>
+        <label class="sw"><input type="checkbox" data-set="regOff" data-inv> Yeni kayıt (kullanıcı adıyla) açık</label>
+        <label class="sw"><input type="checkbox" data-set="guestOff" data-inv> Misafir girişi açık</label>
+        <label class="sw"><input type="checkbox" data-set="postsOff" data-inv> Gönderi paylaşımı açık</label>
+        <label class="sw"><input type="checkbox" data-set="dmOff" data-inv> Mesajlaşma (DM) açık</label>
+      </div>
+    </section>
     <section id="t-bans" class="hide"><div id="bl"></div></section>
     <section id="t-ann" class="hide">
       <div class="box" style="margin-top:12px">
@@ -135,7 +151,7 @@ const firebaseConfig = {
 };
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref as dref, push, set, remove, onValue, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref as dref, push, set, update, remove, onValue, get, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -146,7 +162,8 @@ const left = u => u === 0 ? "kalıcı" : Math.max(1, Math.ceil((u - Date.now()) 
 
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
 let me = null, myName = "", started = false, banTarget = null;
-let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null;
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {};
+const chatId = (a, b) => [a, b].sort().join("_");
 
 const show = id => ["login", "denied", "panel"].forEach(x => $("#" + x).classList.toggle("hide", x !== id));
 const log = (action, target) => push(dref(db, "adminlog"), { by: myName, action, target, at: serverTimestamp() }).catch(() => {});
@@ -188,7 +205,7 @@ function start() {
   if (started) return; started = true;
   const w = (p, fn) => onValue(dref(db, p), s => { fn(s.val() || {}); render(); }, () => {});
   w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
-  w("bans", v => bans = v); w("adminlog", v => logs = v);
+  w("bans", v => bans = v); w("adminlog", v => logs = v); w("comments", v => comments = v); w("settings", v => settings = v);
   onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
 }
 
@@ -210,6 +227,7 @@ function render() {
     const badge = b ? `<span class="b ${b.type === "mute" ? "mute" : "ban"}">${b.type === "mute" ? "Susturuldu" : "Yasaklı"} · ${left(b.until)}</span>` : "";
     return `<div class="item"><div><b>${esc(u.name || "?")}</b>${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div>
       <div class="acts">${b ? `<button class="btn g s" data-a="unban" data-u="${esc(id)}">Yasağı kaldır</button>` : `<button class="btn a s" data-a="ban" data-u="${esc(id)}">Yasakla / Sustur</button>`}
+      <button class="btn a s" data-a="warn" data-u="${esc(id)}">⚠️ Uyarı gönder</button>
       <button class="btn g s" data-a="mail" data-u="${esc(id)}">Şifre e-postası</button>
       <button class="btn g s" data-a="wipe" data-u="${esc(id)}">İçerikleri sil</button>
       <button class="btn r s" data-a="del" data-u="${esc(id)}">Hesabı sil</button></div></div>`;
@@ -232,6 +250,12 @@ function render() {
     <div class="meta">${live(b) ? left(b.until) + " (bitiş: " + (b.until === 0 ? "yok" : fmt(b.until)) + ")" : "süresi doldu"} · Sebep: ${esc(b.reason || "-")} · ${esc(b.by || "")} · ${fmt(b.at)}</div></div>
     <div class="acts"><button class="btn g s" data-a="unban" data-u="${esc(id)}">Kaldır</button></div></div>`).join("") : '<div class="empty">Yasak kaydı yok.</div>';
 
+  const cm = []; Object.entries(comments).forEach(([pid, l]) => Object.entries(l || {}).forEach(([cid, c]) => cm.push({ pid, cid, ...c })));
+  cm.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  $("#cl").innerHTML = cm.length ? cm.slice(0, 200).map(c => `<div class="item"><div><b>${esc(c.author)}</b> <span class="meta">${fmt(c.createdAt)}</span><div class="txt">${esc(c.text)}</div></div>
+    <div class="acts"><button class="btn r s" data-a="dcom" data-u="${esc(c.pid)}" data-c="${esc(c.cid)}">Sil</button></div></div>`).join("") : '<div class="empty">Yorum yok.</div>';
+  document.querySelectorAll("[data-set]").forEach(c => c.checked = c.hasAttribute("data-inv") ? !settings[c.dataset.set] : !!settings[c.dataset.set]);
+  if (document.activeElement !== $("#maintMsg")) $("#maintMsg").value = settings.maintMsg || "";
   const ok = ann && ann.text && (!ann.until || ann.until > Date.now());
   $("#annNow").textContent = ok ? "Yayındaki duyuru: " + ann.text + (ann.until ? " (bitiş: " + fmt(ann.until) + ")" : " (süresiz)") : "Şu an duyuru yok.";
   const gl = Object.values(logs).slice(-60).reverse();
@@ -241,7 +265,7 @@ $("#us").oninput = $("#ps").oninput = render;
 $("#tabs").onclick = e => {
   const b = e.target.closest("[data-t]"); if (!b) return;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-  ["users", "posts", "stories", "bans", "ann", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["users", "posts", "stories", "comments", "bans", "ann", "set", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
 };
 
 /* ---- İşlemler ---- */
@@ -259,7 +283,7 @@ async function setBan(uid, type, days, reason) {
 }
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b) return;
-  const a = b.dataset.a, id = b.dataset.u;
+  const a = b.dataset.a, id = b.dataset.u, cid = b.dataset.c;
   try {
     if (a === "ban") { banTarget = id; $("#bt").textContent = nameOf(id) + " — yasakla / sustur"; $("#brs").value = ""; $("#dlg").showModal(); }
     if (a === "unban") { if (confirm(nameOf(id) + " için yasak kaldırılsın mı?")) { await remove(dref(db, "bans/" + id)); log("Yasak kaldırıldı", nameOf(id)); } }
@@ -279,6 +303,18 @@ document.addEventListener("click", async e => {
       alert("Hesap kapatıldı. Kullanıcı bir daha giriş yapamaz.\nGiriş kaydını tamamen kaldırmak istersen Firebase konsolu → Authentication → Users bölümünden de sil.");
     }
     if (a === "dpost" && confirm("Gönderi silinsin mi?")) { await remove(dref(db, "posts/" + id)); await remove(dref(db, "comments/" + id)); log("Gönderi silindi", posts[id]?.author || id); }
+    if (a === "warn") {
+      const t = prompt(nameOf(id) + " kullanıcısına gidecek uyarı mesajı:"); if (!t || !t.trim()) return;
+      await update(dref(db, "users/" + me.uid), { name: myName });
+      await push(dref(db, "dms/" + chatId(me.uid, id)), { from: me.uid, text: "⚠️ Yönetici uyarısı: " + t.trim(), createdAt: serverTimestamp() });
+      await push(dref(db, "warnings/" + id), { text: t.trim(), by: myName, at: serverTimestamp() });
+      log("Uyarı gönderildi: " + t.trim().slice(0, 40), nameOf(id)); alert("Uyarı hem mesaj kutusuna hem ekrana gönderildi.");
+    }
+    if (a === "dcom" && confirm("Yorum silinsin mi?")) {
+      await remove(dref(db, "comments/" + id + "/" + cid));
+      runTransaction(dref(db, "posts/" + id + "/commentsCount"), n => Math.max(0, (n || 1) - 1)).catch(() => {});
+      log("Yorum silindi", id);
+    }
     if (a === "dstory" && confirm("Hikaye silinsin mi?")) { await remove(dref(db, "stories/" + id)); log("Hikaye silindi", stories[id]?.author || id); }
   } catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); }
 });
@@ -297,6 +333,19 @@ $("#nadd").onclick = async () => {
   try { await set(dref(db, "users/" + u), { name: n }); log("Kişi eklendi", n); $("#nu").value = $("#nn").value = ""; }
   catch (err) { alert("Eklenemedi: " + (err.code || err.message)); }
 };
+$("#cleanSt").onclick = async () => {
+  const old = Object.entries(stories).filter(([, x]) => Date.now() - x.createdAt > 864e5);
+  if (!old.length) return alert("Süresi dolan hikaye yok.");
+  if (!confirm(old.length + " eski hikaye silinsin mi?")) return;
+  await Promise.all(old.map(([id]) => remove(dref(db, "stories/" + id)))); log("Eski hikayeler temizlendi (" + old.length + ")", "-");
+};
+document.addEventListener("change", async e => {
+  const c = e.target.closest("[data-set]"); if (!c) return;
+  const v = c.hasAttribute("data-inv") ? !c.checked : c.checked;
+  try { await set(dref(db, "settings/" + c.dataset.set), v); log("Ayar: " + c.dataset.set + " = " + v, "site"); }
+  catch (err) { alert("Ayar kaydedilemedi: " + (err.code || err.message)); }
+});
+$("#maintSave").onclick = async () => { await set(dref(db, "settings/maintMsg"), $("#maintMsg").value.trim()); log("Bakım mesajı güncellendi", "site"); alert("Kaydedildi."); };
 $("#annSave").onclick = async () => {
   const t = $("#at").value.trim(); if (!t) return alert("Duyuru metni yaz.");
   const d = parseInt($("#ad").value, 10);
