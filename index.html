@@ -108,6 +108,7 @@ aside{display:none}main{border:0}
 #sclose{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:2;background:rgba(0,0,0,.5);border:0;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer}
 .av{position:relative}.dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#42565e;border:2px solid var(--bg)}.dot.on{background:#3ddc97}
 #ann{padding:12px 18px;background:linear-gradient(90deg,var(--blue),var(--green2));font-weight:600}
+#maint,#warn{position:fixed;inset:0;z-index:60;background:rgba(3,12,18,.94);display:grid;place-items:center;padding:16px}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style>
 </head>
@@ -215,6 +216,8 @@ aside{display:none}main{border:0}
   </div>
 </div>
 
+<div id="maint" class="hide"><div class="box"><h2>🛠️ Bakım</h2><p id="maintMsg"></p></div></div>
+<div id="warn" class="hide"><div class="box"><h2>⚠️ Yönetici uyarısı</h2><div id="warnText"></div><button class="btn" id="warnOk">Anladım</button></div></div>
 <div id="sview" class="hide"><button id="sclose">✕</button><div id="sbody"></div></div>
 <input type="file" id="sfile" accept="image/*,video/*" hidden>
 <nav class="mnav hide" id="mnav">
@@ -333,6 +336,7 @@ $("#authForm").onsubmit = async ev => {
     const raw = $("#email").value.trim(), pw = $("#pass").value; stamp();
     if (register) {
       const name = $("#uname").value.trim(); if (!name) throw {code:"", message:"Kullanıcı adı yaz."};
+      if (settings.regOff) throw {code:"", message:"Yeni kayıtlar geçici olarak kapalı."};
       const k = nkey(name); if (!k) throw {code:"", message:"Kullanıcı adında harf veya rakam olmalı."};
       const c = await createUserWithEmailAndPassword(auth, k + "@orkidespor.app", pw);
       await updateProfile(c.user, { displayName: name });
@@ -364,7 +368,7 @@ $("#guest").onclick = async () => {
 $("#guestOut").onclick = () => signOut(auth).then(() => setMode(true));
 
 /* ---------- Oturum ---------- */
-let me = null, isAdmin = false, isGuest = false, unsubPosts, unsubPlayers, unsubUsers, chatUnsub, unsubStories, unsubConn, unsubBan, unsubAnn;
+let me = null, isAdmin = false, isGuest = false, unsubPosts, unsubPlayers, unsubUsers, chatUnsub, unsubStories, unsubConn, unsubBan, unsubAnn, unsubWarn;
 onAuthStateChanged(auth, u => {
   if (u) {
     const t = stamped();
@@ -373,11 +377,12 @@ onAuthStateChanged(auth, u => {
       signOut(auth); $("#err").style.color = ""; $("#err").textContent = "Oturum süren doldu (6 gün). Lütfen tekrar giriş yap."; return;
     }
   }
-  me = u;
+  me = u; adminFlag = false; applySettings();
+  if (u) get(dref(db, "admins/" + u.uid)).then(a => { adminFlag = a.val() === true; applySettings(); }).catch(() => {});
   $("#auth").classList.toggle("hide", !!u);
   $("#app").classList.toggle("hide", !u);
   $("#mnav").classList.toggle("hide", !u);
-  unsubPosts?.(); unsubPlayers?.(); unsubUsers?.(); chatUnsub?.(); unsubStories?.(); unsubConn?.(); unsubBan?.(); unsubAnn?.();
+  unsubPosts?.(); unsubPlayers?.(); unsubUsers?.(); chatUnsub?.(); unsubStories?.(); unsubConn?.(); unsubBan?.(); unsubAnn?.(); unsubWarn?.();
   if (!u) return;
   const n = nameOf(u);
   $("#meName").textContent = n; $("#meAv").textContent = $("#cAv").textContent = n[0].toUpperCase();
@@ -393,6 +398,11 @@ onAuthStateChanged(auth, u => {
   listenPosts(); listenPlayers(); listenStories(); listenAnn();
   if (!isGuest) { update(dref(db, "users/" + u.uid), { name: n }).catch(() => {}); listenUsers();
     unsubBan = onValue(dref(db, "bans/" + u.uid), b => applyBan(b.val()));
+    unsubWarn = onValue(dref(db, "warnings/" + u.uid), w => {
+      const l = []; w.forEach(c => l.push(c.val()));
+      $("#warn").classList.toggle("hide", !l.length);
+      $("#warnText").innerHTML = l.map(x => `<p style="margin:8px 0">${esc(x.text)}<br><small class="meta">${esc(x.by || "Yönetici")} · ${ago(x.at)}</small></p>`).join("");
+    });
     if (u.email && !u.email.endsWith("@orkidespor.app")) set(dref(db, "emails/" + u.uid), u.email).catch(() => {});
     unsubConn = onValue(dref(db, ".info/connected"), c => { if (c.val()) { const pr = dref(db, "presence/" + u.uid); onDisconnect(pr).set(false); set(pr, true); } });
   }
@@ -432,6 +442,7 @@ $("#text").oninput = () => $("#cnt").textContent = $("#text").value.length + "/2
 /* ---------- Gönderiler ---------- */
 $("#send").onclick = async () => {
   if (isMuted()) return;
+  if (settings.postsOff && !adminFlag) return alert("Paylaşımlar geçici olarak kapalı.");
   const text = $("#text").value.trim(), vurl = $("#vurl").value.trim();
   if (!text && !file && !vurl) { $("#perr").textContent = "Bir şeyler yaz ya da video ekle."; return; }
   $("#send").disabled = true; $("#perr").textContent = "";
@@ -586,7 +597,7 @@ $("#dmUsers").onclick = e => { const b = e.target.closest("[data-dm]"); if (b) o
 $("#dmSearch").oninput = renderUsers;
 $("#dmBack").onclick = () => { chatUnsub?.(); chatWith = null; $("#dmChat").classList.add("hide"); $("#dmList").classList.remove("hide"); };
 $("#dmForm").onsubmit = async e => {
-  e.preventDefault(); if (isMuted()) return; const t = $("#dmText").value.trim(); if (!t || !chatWith) return; $("#dmText").value = "";
+  e.preventDefault(); if (isMuted()) return; if (settings.dmOff && !adminFlag) return alert("Mesajlaşma geçici olarak kapalı."); const t = $("#dmText").value.trim(); if (!t || !chatWith) return; $("#dmText").value = "";
   try { await push(dref(db, "dms/" + chatId(me.uid, chatWith)), { from: me.uid, text: t, createdAt: serverTimestamp() }); }
   catch (err) { alert("Mesaj gönderilemedi: " + (err.code || err.message)); }
 };
@@ -679,6 +690,18 @@ function listenAnn() {
     $("#ann").textContent = ok ? "📢 " + a.text : ""; $("#ann").classList.toggle("hide", !ok);
   });
 }
+
+/* ---------- Site ayarları (yönetici panelinden) ---------- */
+let settings = {}, adminFlag = false;
+function applySettings() {
+  $("#guest").classList.toggle("hide", !!settings.guestOff);
+  $("#toggle").classList.toggle("hide", !!settings.regOff && !register);
+  const m = !!settings.maintenance && !adminFlag;
+  $("#maint").classList.toggle("hide", !m);
+  $("#maintMsg").textContent = settings.maintMsg || "Site bakımda. Lütfen daha sonra tekrar dene.";
+}
+onValue(dref(db, "settings"), s => { settings = s.val() || {}; applySettings(); }, () => {});
+$("#warnOk").onclick = () => remove(dref(db, "warnings/" + me.uid)).catch(() => {});
 </script>
 </body>
 </html>
