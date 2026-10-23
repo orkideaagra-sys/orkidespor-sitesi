@@ -33,7 +33,7 @@ main{max-width:980px;margin:0 auto;padding:0 14px}
 .acts{display:flex;gap:6px;flex-wrap:wrap}
 .meta{color:var(--mute);font-size:13px;word-break:break-all}
 .b{font-size:12px;padding:2px 9px;border-radius:999px;font-weight:700;margin-left:6px}
-.b.ban{background:var(--red);color:#fff}.b.mute{background:var(--amber);color:#2a1d00}
+.b.ban{background:var(--red);color:#fff}.b.mod{background:var(--green);color:#042}.b.mute{background:var(--amber);color:#2a1d00}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
 .th{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;display:grid;gap:6px}
 .th img,.th video{width:100%;height:160px;object-fit:cover;border-radius:10px;background:#000}
@@ -61,8 +61,11 @@ dialog form{display:grid;gap:10px}
 
 <div id="denied" class="wrap hide">
   <div class="box">
-    <h2>Yönetici değilsin</h2>
-    <p class="meta" style="font-size:15px">Bu hesabın yönetici olması için Firebase Realtime Database'de <b>admins</b> altına şu kimliği (UID) ekle ve değerini <b>true</b> yap:</p>
+    <h2>Yetkin yok</h2>
+    <p class="meta" style="font-size:15px">Bu sayfa yönetici ve moderatörler içindir. Moderatör olmak istiyorsan başvur, patron onaylayınca sayfayı yenile.</p>
+    <button class="btn" id="apply">Moderatörlük başvurusu gönder</button>
+    <p class="meta" id="applyMsg" style="font-size:14px"></p>
+    <p class="meta" style="font-size:13px">Patron kurulumu: Realtime Database'de <b>admins</b> altına şu UID'yi ekle, değeri <b>true</b> olsun:</p>
     <input class="f" id="uid" readonly onclick="this.select()">
     <p class="err" id="why" style="min-height:0"></p>
     <button class="btn g" id="out0">Çıkış yap</button>
@@ -78,10 +81,12 @@ dialog form{display:grid;gap:10px}
       <button class="btn g" data-t="posts">📝 Gönderiler</button>
       <button class="btn g" data-t="stories">🎞️ Hikayeler</button>
       <button class="btn g" data-t="comments">💬 Yorumlar</button>
+      <button class="btn g" data-t="reports">🚩 Şikayetler</button>
       <button class="btn g" data-t="bans">⛔ Yasaklar</button>
-      <button class="btn g" data-t="ann">📢 Duyuru</button>
-      <button class="btn g" data-t="set">⚙️ Site Ayarları</button>
-      <button class="btn g" data-t="log">📜 Kayıt</button>
+      <button class="btn g" data-t="mods" data-patron>🛡️ Moderatörler</button>
+      <button class="btn g" data-t="ann" data-patron>📢 Duyuru</button>
+      <button class="btn g" data-t="set" data-patron>⚙️ Site Ayarları</button>
+      <button class="btn g" data-t="log" data-patron>📜 Kayıt</button>
     </div>
 
     <section id="t-users">
@@ -98,6 +103,17 @@ dialog form{display:grid;gap:10px}
     <section id="t-posts" class="hide"><input class="f" id="ps" placeholder="Gönderi veya kişi ara" style="margin-top:12px"><div id="pl"></div></section>
     <section id="t-stories" class="hide"><button class="btn g s" id="cleanSt" style="margin-top:12px">Süresi dolan hikayeleri temizle</button><div class="thumbs" id="sl"></div></section>
     <section id="t-comments" class="hide"><div id="cl"></div></section>
+    <section id="t-reports" class="hide"><div id="rl"></div></section>
+    <section id="t-mods" class="hide">
+      <div class="box" style="margin-top:12px">
+        <b>Moderatörlük başvuru bağlantısı</b>
+        <div class="meta" style="font-size:14px">Bu bağlantıyı moderatör olmasını istediğin kişiye gönder. Kişi giriş yapıp "Başvuru gönder"e basınca aşağıda "Başvurular"da görünür, sen onaylarsın.</div>
+        <input class="f" id="modlink" readonly onclick="this.select()">
+        <button class="btn" id="copylink" style="justify-self:start">Bağlantıyı kopyala</button>
+      </div>
+      <h3 style="margin:16px 0 0">Başvurular</h3><div id="rq"></div>
+      <h3 style="margin:16px 0 0">Moderatörler</h3><div id="ml"></div>
+    </section>
     <section id="t-set" class="hide">
       <div class="box" style="margin-top:12px">
         <b>Site ayarları</b>
@@ -108,6 +124,11 @@ dialog form{display:grid;gap:10px}
         <label class="sw"><input type="checkbox" data-set="guestOff" data-inv> Misafir girişi açık</label>
         <label class="sw"><input type="checkbox" data-set="postsOff" data-inv> Gönderi paylaşımı açık</label>
         <label class="sw"><input type="checkbox" data-set="dmOff" data-inv> Mesajlaşma (DM) açık</label>
+        <b style="margin-top:8px">Otomatik moderasyon</b>
+        <input class="f" id="slow" type="number" min="0" max="3600" placeholder="Yavaş mod: gönderiler arası saniye (0 = kapalı)">
+        <button class="btn g s" id="slowSave" style="justify-self:start">Yavaş modu kaydet</button>
+        <textarea class="f" id="bw" rows="3" placeholder="Yasaklı kelimeler (virgülle ayır: kelime1, kelime2)"></textarea>
+        <button class="btn g s" id="bwSave" style="justify-self:start">Kelime listesini kaydet</button>
       </div>
     </section>
     <section id="t-bans" class="hide"><div id="bl"></div></section>
@@ -162,11 +183,12 @@ const left = u => u === 0 ? "kalıcı" : Math.max(1, Math.ceil((u - Date.now()) 
 
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
 let me = null, myName = "", started = false, banTarget = null;
-let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {};
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {};
 const chatId = (a, b) => [a, b].sort().join("_");
+const can = p => role === "patron" || perms[p] === true;
 
 const show = id => ["login", "denied", "panel"].forEach(x => $("#" + x).classList.toggle("hide", x !== id));
-const log = (action, target) => push(dref(db, "adminlog"), { by: myName, action, target, at: serverTimestamp() }).catch(() => {});
+const log = (action, target) => push(dref(db, "adminlog"), { by: myName + (role === "mod" ? " (mod)" : ""), action, target, at: serverTimestamp() }).catch(() => {});
 const known = () => {
   const k = {};
   Object.values(posts).forEach(p => { if (p.uid) k[p.uid] = { name: p.author }; });
@@ -191,22 +213,34 @@ $("#lg").onclick = async () => {
 $("#out").onclick = $("#out0").onclick = () => signOut(auth);
 onAuthStateChanged(auth, async u => {
   me = u; if (!u) return show("login");
+  myName = u.displayName || (u.email || "").split("@")[0] || "Kullanıcı"; role = null; perms = {};
+  $("#uid").value = u.uid; $("#why").textContent = "";
+  if (new URLSearchParams(location.search).has("mod")) $("#applyMsg").textContent = "Moderatör olmak için yukarıdaki butona bas.";
   try {
     const a = await get(dref(db, "admins/" + u.uid));
-    if (!a.exists()) { $("#uid").value = u.uid; $("#why").textContent = "Sebep: Veritabanında admins altında bu UID bulunamadı. UID'yi (ve değerinin true olduğunu) kontrol et. Giriş yaptığın hesap: " + (u.email || u.displayName || "?"); return show("denied"); }
-    if (a.val() !== true) { $("#uid").value = u.uid; $("#why").textContent = "Sebep: UID bulundu ama değeri true değil (şu an: " + JSON.stringify(a.val()) + "). Değeri tırnaksız true yap."; return show("denied"); }
-  } catch (err) { $("#uid").value = u.uid; $("#why").textContent = "Sebep: Okuma izni yok (" + (err.code || err.message) + "). Yeni kuralı Realtime Database → Rules'a yapıştırıp Publish'e bastın mı?"; return show("denied"); }
-  myName = u.displayName || (u.email || "").split("@")[0];
-  $("#me").textContent = myName; show("panel"); start();
+    if (a.val() === true) role = "patron";
+    else { const m = await get(dref(db, "mods/" + u.uid)); if (m.exists()) { role = "mod"; perms = m.val().perms || {}; } }
+  } catch (err) { $("#why").textContent = "Okuma izni yok (" + (err.code || err.message) + "). Yeni kuralları Realtime Database → Rules'a yapıştırıp Publish'e bastın mı?"; }
+  if (!role) return show("denied");
+  $("#me").textContent = myName + (role === "patron" ? " · Patron" : " · Moderatör");
+  document.querySelectorAll("[data-patron]").forEach(x => x.classList.toggle("hide", role !== "patron"));
+  show("panel"); start();
 });
+$("#apply").onclick = async () => {
+  try { await set(dref(db, "modrequests/" + me.uid), { name: myName, at: serverTimestamp() }); $("#applyMsg").textContent = "Başvurun gönderildi. Patron onaylayınca bu sayfayı yenile."; }
+  catch (err) { $("#applyMsg").textContent = "Başvuru gönderilemedi (zaten başvurmuş olabilirsin veya kurallar yayınlanmamış): " + (err.code || err.message); }
+};
 
 /* ---- Veri ---- */
 function start() {
   if (started) return; started = true;
   const w = (p, fn) => onValue(dref(db, p), s => { fn(s.val() || {}); render(); }, () => {});
   w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
-  w("bans", v => bans = v); w("adminlog", v => logs = v); w("comments", v => comments = v); w("settings", v => settings = v);
+  w("bans", v => bans = v);
+  if (role === "patron") { w("adminlog", v => logs = v); w("mods", v => mods = v); w("modrequests", v => modreq = v); }
+  w("reports", v => reports = v); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
   onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
+  $("#modlink").value = location.origin + location.pathname + "?mod=1";
 }
 
 /* ---- Çizim ---- */
@@ -215,7 +249,7 @@ function render() {
   const st = [["Kullanıcı", Object.keys(known()).length], ["Gönderi", Object.keys(posts).length],
     ["Bugünkü gönderi", Object.values(posts).filter(p => p.createdAt > day).length],
     ["Aktif hikaye", Object.values(stories).filter(s => Date.now() - s.createdAt < 864e5).length],
-    ["Aktif yasak", Object.values(bans).filter(live).length]];
+    ["Aktif yasak", Object.values(bans).filter(live).length], ["Açık şikayet", Object.keys(reports).length]];
   $("#stats").innerHTML = st.map(([k, v]) => `<div class="st"><b>${v}</b><small>${k}</small></div>`).join("");
 
   const cnt = {}; Object.values(posts).forEach(p => cnt[p.uid] = (cnt[p.uid] || 0) + 1);
@@ -225,12 +259,14 @@ function render() {
   $("#ul").innerHTML = ul.length ? ul.map(([id, u]) => {
     const b = live(bans[id]) ? bans[id] : null;
     const badge = b ? `<span class="b ${b.type === "mute" ? "mute" : "ban"}">${b.type === "mute" ? "Susturuldu" : "Yasaklı"} · ${left(b.until)}</span>` : "";
-    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div>
-      <div class="acts">${b ? `<button class="btn g s" data-a="unban" data-u="${esc(id)}">Yasağı kaldır</button>` : `<button class="btn a s" data-a="ban" data-u="${esc(id)}">Yasakla / Sustur</button>`}
-      <button class="btn a s" data-a="warn" data-u="${esc(id)}">⚠️ Uyarı gönder</button>
-      <button class="btn g s" data-a="mail" data-u="${esc(id)}">Şifre e-postası</button>
-      <button class="btn g s" data-a="wipe" data-u="${esc(id)}">İçerikleri sil</button>
-      <button class="btn r s" data-a="del" data-u="${esc(id)}">Hesabı sil</button></div></div>`;
+    const bt = (c, ac, t) => `<button class="btn ${c} s" data-a="${ac}" data-u="${esc(id)}">${t}</button>`;
+    const acts = [];
+    if (can("mute") || can("ban")) acts.push(b ? bt("g", "unban", "Yasağı kaldır") : bt("a", "ban", "Yasakla / Sustur"));
+    if (can("warn")) acts.push(bt("a", "warn", "⚠️ Uyarı gönder"));
+    acts.push(bt("g", "note", "📝 Not (" + Object.keys(notes[id] || {}).length + ")"));
+    if (can("del")) acts.push(bt("g", "wipe", "İçerikleri sil"));
+    if (role === "patron") { acts.push(bt("g", "mail", "Şifre e-postası")); acts.push(mods[id] ? bt("g", "rmmod", "Moderatörlüğü al") : bt("g", "mkmod", "🛡️ Moderatör yap")); acts.push(bt("r", "del", "Hesabı sil")); }
+    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${mods[id] ? '<span class="b mod">Moderatör</span>' : ""}${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div><div class="acts">${acts.join("")}</div></div>`;
   }).join("") : '<div class="empty">Kullanıcı yok. Kullanıcılar siteye girdikçe veya paylaşım yaptıkça burada görünür. Eksik birini aşağıdaki "Kişi ekle" ile elle ekleyebilirsin.</div>';
 
   const pq = nkey($("#ps").value);
@@ -238,22 +274,34 @@ function render() {
     .filter(([, p]) => !pq || nkey((p.text || "") + (p.author || "")).includes(pq));
   $("#pl").innerHTML = pl.length ? pl.map(([id, p]) => `<div class="item"><div><b>${esc(p.author)}</b> <span class="meta">${fmt(p.createdAt)}</span>
     <div class="txt">${esc(p.text)}</div>${p.videoUrl ? `<div class="meta">${p.mediaType === "image" ? "🖼️ foto" : "🎬 video"}: <a href="${esc(p.videoUrl)}" target="_blank" rel="noopener" style="color:var(--green)">aç</a></div>` : ""}</div>
-    <div class="acts"><button class="btn r s" data-a="dpost" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Gönderi yok.</div>';
+    <div class="acts"><button class="btn g s" data-a="pin" data-u="${esc(id)}">${settings.pinned === id ? "📌 Sabiti kaldır" : "📌 Sabitle"}</button>${can("del") ? `<button class="btn r s" data-a="dpost" data-u="${esc(id)}">Sil</button>` : ""}</div></div>`).join("") : '<div class="empty">Gönderi yok.</div>';
 
   const sl = Object.entries(stories).sort((a, b) => b[1].createdAt - a[1].createdAt);
   $("#sl").innerHTML = sl.length ? sl.map(([id, s]) => `<div class="th">${s.type === "image" ? `<img src="${esc(s.url)}" alt="" loading="lazy">` : `<video src="${esc(s.url)}" controls preload="metadata"></video>`}
     <div class="meta"><b>${esc(s.author)}</b> · ${fmt(s.createdAt)}${Date.now() - s.createdAt > 864e5 ? " · süresi doldu" : ""}</div>
-    <button class="btn r s" data-a="dstory" data-u="${esc(id)}">Sil</button></div>`).join("") : '<div class="empty" style="grid-column:1/-1">Hikaye yok.</div>';
+    ${can("del") ? `<button class="btn r s" data-a="dstory" data-u="${esc(id)}">Sil</button>` : ""}</div>`).join("") : '<div class="empty" style="grid-column:1/-1">Hikaye yok.</div>';
 
   const bl = Object.entries(bans).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
   $("#bl").innerHTML = bl.length ? bl.map(([id, b]) => `<div class="item"><div><b>${esc(nameOf(id))}</b><span class="b ${b.type === "mute" ? "mute" : "ban"}">${b.type === "mute" ? "Susturma" : "Yasak"}</span>
     <div class="meta">${live(b) ? left(b.until) + " (bitiş: " + (b.until === 0 ? "yok" : fmt(b.until)) + ")" : "süresi doldu"} · Sebep: ${esc(b.reason || "-")} · ${esc(b.by || "")} · ${fmt(b.at)}</div></div>
     <div class="acts"><button class="btn g s" data-a="unban" data-u="${esc(id)}">Kaldır</button></div></div>`).join("") : '<div class="empty">Yasak kaydı yok.</div>';
 
+  const rqs = Object.entries(modreq);
+  $("#rq").innerHTML = rqs.length ? rqs.map(([id, r]) => `<div class="item"><div><b>${esc(r.name)}</b> <span class="meta">${fmt(r.at)}</span><div class="meta">${esc(id)}</div></div>
+    <div class="acts"><button class="btn s" data-a="mapprove" data-u="${esc(id)}">Onayla</button><button class="btn g s" data-a="mreject" data-u="${esc(id)}">Reddet</button></div></div>`).join("") : '<div class="empty">Bekleyen başvuru yok.</div>';
+  const pk = [["del", "İçerik silme"], ["mute", "Susturma"], ["ban", "Geçici yasak (en çok 7 gün)"], ["warn", "Uyarı"]], ms = Object.entries(mods);
+  $("#ml").innerHTML = ms.length ? ms.map(([id, m]) => `<div class="item"><div><b>${esc(m.name || nameOf(id))}</b> <span class="meta">${esc(id)}</span>
+    <div>${pk.map(([k, t]) => `<label class="sw" style="display:inline-flex;margin-right:12px"><input type="checkbox" data-mp="${esc(id)}" data-k="${k}" ${m.perms && m.perms[k] ? "checked" : ""}> ${t}</label>`).join("")}</div></div>
+    <div class="acts"><button class="btn r s" data-a="rmmod" data-u="${esc(id)}">Moderatörlüğü al</button></div></div>`).join("") : '<div class="empty">Henüz moderatör yok.</div>';
+  const rp = Object.entries(reports).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  $("#rl").innerHTML = rp.length ? rp.map(([id, r]) => `<div class="item"><div><b>🚩 ${esc(r.author)}</b> <span class="meta">şikayet eden: ${esc(r.by)} · ${fmt(r.at)}</span><div class="txt">${esc(r.text)}</div><div class="meta">Sebep: ${esc(r.reason || "-")}</div></div>
+    <div class="acts">${can("del") ? `<button class="btn r s" data-a="rdel" data-u="${esc(id)}" data-c="${esc(r.postId)}">Gönderiyi sil</button>` : ""}<button class="btn g s" data-a="rok" data-u="${esc(id)}">Yoksay</button></div></div>`).join("") : '<div class="empty">Açık şikayet yok. 🎉</div>';
+  if (document.activeElement !== $("#slow")) $("#slow").value = settings.slowSec || "";
+  if (document.activeElement !== $("#bw")) $("#bw").value = settings.badWords || "";
   const cm = []; Object.entries(comments).forEach(([pid, l]) => Object.entries(l || {}).forEach(([cid, c]) => cm.push({ pid, cid, ...c })));
   cm.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   $("#cl").innerHTML = cm.length ? cm.slice(0, 200).map(c => `<div class="item"><div><b>${esc(c.author)}</b> <span class="meta">${fmt(c.createdAt)}</span><div class="txt">${esc(c.text)}</div></div>
-    <div class="acts"><button class="btn r s" data-a="dcom" data-u="${esc(c.pid)}" data-c="${esc(c.cid)}">Sil</button></div></div>`).join("") : '<div class="empty">Yorum yok.</div>';
+    <div class="acts">${can("del") ? `<button class="btn r s" data-a="dcom" data-u="${esc(c.pid)}" data-c="${esc(c.cid)}">Sil</button>` : ""}</div></div>`).join("") : '<div class="empty">Yorum yok.</div>';
   document.querySelectorAll("[data-set]").forEach(c => c.checked = c.hasAttribute("data-inv") ? !settings[c.dataset.set] : !!settings[c.dataset.set]);
   if (document.activeElement !== $("#maintMsg")) $("#maintMsg").value = settings.maintMsg || "";
   const ok = ann && ann.text && (!ann.until || ann.until > Date.now());
@@ -265,7 +313,7 @@ $("#us").oninput = $("#ps").oninput = render;
 $("#tabs").onclick = e => {
   const b = e.target.closest("[data-t]"); if (!b) return;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-  ["users", "posts", "stories", "comments", "bans", "ann", "set", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["users", "posts", "stories", "comments", "reports", "bans", "mods", "ann", "set", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
 };
 
 /* ---- İşlemler ---- */
@@ -284,8 +332,17 @@ async function setBan(uid, type, days, reason) {
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b) return;
   const a = b.dataset.a, id = b.dataset.u, cid = b.dataset.c;
+  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
+  if (["wipe", "dpost", "dstory", "dcom", "rdel"].includes(a) && !can("del")) return alert("Silme yetkin yok.");
+  if (a === "ban" && !(can("mute") || can("ban"))) return alert("Yasaklama yetkin yok.");
+  if (a === "warn" && !can("warn")) return alert("Uyarı gönderme yetkin yok.");
   try {
-    if (a === "ban") { banTarget = id; $("#bt").textContent = nameOf(id) + " — yasakla / sustur"; $("#brs").value = ""; $("#dlg").showModal(); }
+    if (a === "ban") { banTarget = id; $("#bt").textContent = nameOf(id) + " — yasakla / sustur"; $("#brs").value = "";
+      [...$("#btype").options].forEach(o => o.hidden = o.disabled = !(role === "patron" || perms[o.value]));
+      $("#btype").value = ([...$("#btype").options].find(o => !o.disabled) || {}).value || "mute";
+      [...$("#bdur").options].forEach(o => o.hidden = o.disabled = role !== "patron" && !["1", "3", "7"].includes(o.value));
+      $("#bdur").value = role === "patron" ? "7" : "1"; $("#bcus").classList.add("hide");
+      $("#dlg").showModal(); }
     if (a === "unban") { if (confirm(nameOf(id) + " için yasak kaldırılsın mı?")) { await remove(dref(db, "bans/" + id)); log("Yasak kaldırıldı", nameOf(id)); } }
     if (a === "mail") {
       const m = await get(dref(db, "emails/" + id));
@@ -303,6 +360,27 @@ document.addEventListener("click", async e => {
       alert("Hesap kapatıldı. Kullanıcı bir daha giriş yapamaz.\nGiriş kaydını tamamen kaldırmak istersen Firebase konsolu → Authentication → Users bölümünden de sil.");
     }
     if (a === "dpost" && confirm("Gönderi silinsin mi?")) { await remove(dref(db, "posts/" + id)); await remove(dref(db, "comments/" + id)); log("Gönderi silindi", posts[id]?.author || id); }
+    if (a === "mkmod" || a === "mapprove") {
+      const nm = a === "mapprove" ? (modreq[id]?.name || nameOf(id)) : nameOf(id);
+      if (a === "mkmod" && !confirm(nm + " moderatör yapılsın mı?")) return;
+      await set(dref(db, "mods/" + id), { name: nm, perms: { del: true, mute: true, warn: true, ban: false }, by: myName, at: serverTimestamp() });
+      await remove(dref(db, "modrequests/" + id)).catch(() => {}); log("Moderatör atandı", nm);
+    }
+    if (a === "mreject") { await remove(dref(db, "modrequests/" + id)); log("Moderatörlük başvurusu reddedildi", modreq[id]?.name || id); }
+    if (a === "rmmod" && confirm(nameOf(id) + " moderatörlükten alınsın mı?")) { await remove(dref(db, "mods/" + id)); log("Moderatörlük alındı", nameOf(id)); }
+    if (a === "note") {
+      const l = Object.values(notes[id] || {}).sort((x, y) => (x.at || 0) - (y.at || 0)).map(n => "• " + n.text + " (" + n.by + ", " + fmt(n.at) + ")").join("\n") || "Henüz not yok.";
+      const t = prompt(nameOf(id) + " için notlar:\n\n" + l + "\n\nYeni not ekle (boş bırakırsan sadece görüntülersin):");
+      if (t && t.trim()) { await push(dref(db, "notes/" + id), { text: t.trim(), by: myName, at: serverTimestamp() }); log("Not eklendi", nameOf(id)); }
+    }
+    if (a === "pin") {
+      if (settings.pinned === id) await remove(dref(db, "settings/pinned")); else await set(dref(db, "settings/pinned"), id);
+      log("Gönderi sabitleme değişti", posts[id]?.author || id);
+    }
+    if (a === "rdel" && confirm("Şikayet edilen gönderi silinsin mi?")) {
+      await remove(dref(db, "posts/" + cid)); await remove(dref(db, "comments/" + cid)); await remove(dref(db, "reports/" + id)); log("Şikayet üzerine gönderi silindi", cid);
+    }
+    if (a === "rok") { await remove(dref(db, "reports/" + id)); log("Şikayet kapatıldı", reports[id]?.author || id); }
     if (a === "warn") {
       const t = prompt(nameOf(id) + " kullanıcısına gidecek uyarı mesajı:"); if (!t || !t.trim()) return;
       await update(dref(db, "users/" + me.uid), { name: myName });
@@ -346,6 +424,14 @@ document.addEventListener("change", async e => {
   catch (err) { alert("Ayar kaydedilemedi: " + (err.code || err.message)); }
 });
 $("#maintSave").onclick = async () => { await set(dref(db, "settings/maintMsg"), $("#maintMsg").value.trim()); log("Bakım mesajı güncellendi", "site"); alert("Kaydedildi."); };
+document.addEventListener("change", async e => {
+  const c = e.target.closest("[data-mp]"); if (!c) return;
+  try { await set(dref(db, "mods/" + c.dataset.mp + "/perms/" + c.dataset.k), c.checked); log("Moderatör yetkisi: " + c.dataset.k + " = " + c.checked, nameOf(c.dataset.mp)); }
+  catch (err) { alert("Kaydedilemedi: " + (err.code || err.message)); }
+});
+$("#copylink").onclick = () => { $("#modlink").select(); navigator.clipboard?.writeText($("#modlink").value).then(() => alert("Bağlantı kopyalandı.")).catch(() => {}); };
+$("#slowSave").onclick = async () => { await set(dref(db, "settings/slowSec"), Math.max(0, parseInt($("#slow").value, 10) || 0)); log("Yavaş mod güncellendi", "site"); alert("Kaydedildi."); };
+$("#bwSave").onclick = async () => { await set(dref(db, "settings/badWords"), $("#bw").value.trim()); log("Yasaklı kelime listesi güncellendi", "site"); alert("Kaydedildi."); };
 $("#annSave").onclick = async () => {
   const t = $("#at").value.trim(); if (!t) return alert("Duyuru metni yaz.");
   const d = parseInt($("#ad").value, 10);
