@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Orkide · Yönetim Paneli</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06161f;--panel:#0b2330;--panel2:#0f2f40;--line:#17435a;--text:#e6f3f1;--mute:#7fa3ab;--green:#22b98a;--red:#e5586b;--amber:#e9b44c}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',system-ui,sans-serif;line-height:1.5;padding-bottom:40px}
+button,input,select,textarea{font:inherit;color:inherit}
+.hide{display:none!important}
+.wrap{max-width:420px;margin:12vh auto;padding:0 16px;display:grid;gap:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;display:grid;gap:12px}
+.f{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;outline:0;width:100%;min-height:44px}
+.f:focus{border-color:var(--green)}
+.btn{background:var(--green);color:#042;border:0;border-radius:999px;padding:8px 16px;font-weight:700;cursor:pointer;min-height:40px}
+.btn.g{background:none;border:1px solid var(--line);color:var(--text)}
+.btn.r{background:var(--red);color:#fff}.btn.a{background:var(--amber);color:#2a1d00}
+.btn.s{padding:4px 12px;min-height:34px;font-size:14px}
+header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(6,22,31,.95);z-index:5;font-weight:800;font-size:20px}
+header span{margin-left:auto;color:var(--mute);font-weight:400;font-size:15px}
+main{max-width:980px;margin:0 auto;padding:0 14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}
+.st{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.st b{font-size:26px;color:var(--green);display:block}.st small{color:var(--mute)}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.tabs button{white-space:nowrap}.tabs .on{background:var(--green);color:#042;border-color:var(--green)}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-top:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.item>div:first-child{flex:1;min-width:200px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.meta{color:var(--mute);font-size:13px;word-break:break-all}
+.b{font-size:12px;padding:2px 9px;border-radius:999px;font-weight:700;margin-left:6px}
+.b.ban{background:var(--red);color:#fff}.b.mute{background:var(--amber);color:#2a1d00}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+.th{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;display:grid;gap:6px}
+.th img,.th video{width:100%;height:160px;object-fit:cover;border-radius:10px;background:#000}
+.txt{white-space:pre-wrap;word-wrap:break-word;margin:4px 0}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:20px;padding:22px;width:min(92vw,400px)}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog form{display:grid;gap:10px}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+.err{color:var(--red);font-size:14px;min-height:18px}
+</style>
+</head>
+<body>
+
+<div id="login" class="wrap">
+  <form class="box" id="lf">
+    <h2>Yönetici girişi</h2>
+    <input class="f" id="lu" placeholder="Kullanıcı adı veya e-posta" autocomplete="username">
+    <input class="f" id="lp" type="password" placeholder="Şifre" autocomplete="current-password">
+    <div class="err" id="lerr"></div>
+    <button class="btn">Giriş yap</button>
+  </form>
+</div>
+
+<div id="denied" class="wrap hide">
+  <div class="box">
+    <h2>Yönetici değilsin</h2>
+    <p class="meta" style="font-size:15px">Bu hesabın yönetici olması için Firebase Realtime Database'de <b>admins</b> altına şu kimliği (UID) ekle ve değerini <b>true</b> yap:</p>
+    <input class="f" id="uid" readonly onclick="this.select()">
+    <button class="btn g" id="out0">Çıkış yap</button>
+  </div>
+</div>
+
+<div id="panel" class="hide">
+  <header>🛡️ Orkide Yönetim <span id="me"></span><button class="btn g s" id="out">Çıkış</button></header>
+  <main>
+    <div class="stats" id="stats"></div>
+    <div class="tabs" id="tabs">
+      <button class="btn g on" data-t="users">👥 Kullanıcılar</button>
+      <button class="btn g" data-t="posts">📝 Gönderiler</button>
+      <button class="btn g" data-t="stories">🎞️ Hikayeler</button>
+      <button class="btn g" data-t="bans">⛔ Yasaklar</button>
+      <button class="btn g" data-t="ann">📢 Duyuru</button>
+      <button class="btn g" data-t="log">📜 Kayıt</button>
+    </div>
+
+    <section id="t-users"><input class="f" id="us" placeholder="Kullanıcı ara (ad veya UID)" style="margin-top:12px"><div id="ul"></div></section>
+    <section id="t-posts" class="hide"><input class="f" id="ps" placeholder="Gönderi veya kişi ara" style="margin-top:12px"><div id="pl"></div></section>
+    <section id="t-stories" class="hide"><div class="thumbs" id="sl"></div></section>
+    <section id="t-bans" class="hide"><div id="bl"></div></section>
+    <section id="t-ann" class="hide">
+      <div class="box" style="margin-top:12px">
+        <div id="annNow" class="meta"></div>
+        <textarea class="f" id="at" maxlength="200" rows="3" placeholder="Sitede herkese görünecek duyuru"></textarea>
+        <select class="f" id="ad"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7">7 gün</option></select>
+        <div class="acts"><button class="btn" id="annSave">Yayınla</button><button class="btn g" id="annDel">Duyuruyu kaldır</button></div>
+      </div>
+    </section>
+    <section id="t-log" class="hide"><div id="gl"></div></section>
+  </main>
+</div>
+
+<dialog id="dlg">
+  <form id="bf" method="dialog">
+    <h3 id="bt">Yasakla</h3>
+    <select class="f" id="btype"><option value="ban">Yasak (siteye giremez)</option><option value="mute">Susturma (sadece okuyabilir)</option></select>
+    <select class="f" id="bdur">
+      <option value="1">1 gün</option><option value="3">3 gün</option><option value="7" selected>7 gün</option>
+      <option value="14">14 gün</option><option value="30">30 gün</option><option value="90">90 gün</option>
+      <option value="c">Gün sayısı seç…</option><option value="0">Kalıcı</option>
+    </select>
+    <input class="f hide" id="bcus" type="number" min="1" max="3650" placeholder="Kaç gün?">
+    <input class="f" id="brs" maxlength="120" placeholder="Sebep (kullanıcıya gösterilir)">
+    <div class="acts"><button class="btn r" id="bok" value="ok">Uygula</button><button class="btn g" type="button" id="bno">Vazgeç</button></div>
+  </form>
+</dialog>
+
+<script type="module">
+const firebaseConfig = {
+  apiKey: "AIzaSyB1v4gDe2WNfL-ZkQBA7ytwdSZXwvGQMVA",
+  authDomain: "project-2144054113632047131.firebaseapp.com",
+  databaseURL: "https://project-2144054113632047131-default-rtdb.firebaseio.com",
+  projectId: "project-2144054113632047131",
+  storageBucket: "project-2144054113632047131.firebasestorage.app",
+  messagingSenderId: "552024282910",
+  appId: "1:552024282910:web:18125f36ebf43e6a345b0f",
+  measurementId: "G-K26JX8HDSM"
+};
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref as dref, push, set, remove, onValue, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nkey = t => t.toLocaleLowerCase("tr").replace(/ı/g, "i").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+const fmt = ts => ts ? new Date(ts).toLocaleString("tr-TR") : "-";
+const live = b => b && (b.until === 0 || b.until > Date.now());
+const left = u => u === 0 ? "kalıcı" : Math.max(1, Math.ceil((u - Date.now()) / 864e5)) + " gün kaldı";
+
+const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
+let me = null, myName = "", started = false, banTarget = null;
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null;
+
+const show = id => ["login", "denied", "panel"].forEach(x => $("#" + x).classList.toggle("hide", x !== id));
+const log = (action, target) => push(dref(db, "adminlog"), { by: myName, action, target, at: serverTimestamp() }).catch(() => {});
+const nameOf = uid => users[uid]?.name || uid;
+
+/* ---- Giriş ---- */
+$("#lf").onsubmit = async e => {
+  e.preventDefault(); $("#lerr").textContent = "";
+  const raw = $("#lu").value.trim();
+  try { await signInWithEmailAndPassword(auth, raw.includes("@") ? raw : nkey(raw) + "@orkidespor.app", $("#lp").value); }
+  catch { $("#lerr").textContent = "Giriş başarısız. Bilgileri kontrol et."; }
+};
+$("#out").onclick = $("#out0").onclick = () => signOut(auth);
+onAuthStateChanged(auth, async u => {
+  me = u; if (!u) return show("login");
+  try {
+    const a = await get(dref(db, "admins/" + u.uid));
+    if (!a.exists()) { $("#uid").value = u.uid; return show("denied"); }
+  } catch { $("#uid").value = u.uid; return show("denied"); }
+  myName = u.displayName || (u.email || "").split("@")[0];
+  $("#me").textContent = myName; show("panel"); start();
+});
+
+/* ---- Veri ---- */
+function start() {
+  if (started) return; started = true;
+  const w = (p, fn) => onValue(dref(db, p), s => { fn(s.val() || {}); render(); }, () => {});
+  w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
+  w("bans", v => bans = v); w("adminlog", v => logs = v);
+  onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
+}
+
+/* ---- Çizim ---- */
+function render() {
+  const day = new Date().setHours(0, 0, 0, 0);
+  const st = [["Kullanıcı", Object.keys(users).length], ["Gönderi", Object.keys(posts).length],
+    ["Bugünkü gönderi", Object.values(posts).filter(p => p.createdAt > day).length],
+    ["Aktif hikaye", Object.values(stories).filter(s => Date.now() - s.createdAt < 864e5).length],
+    ["Aktif yasak", Object.values(bans).filter(live).length]];
+  $("#stats").innerHTML = st.map(([k, v]) => `<div class="st"><b>${v}</b><small>${k}</small></div>`).join("");
+
+  const cnt = {}; Object.values(posts).forEach(p => cnt[p.uid] = (cnt[p.uid] || 0) + 1);
+  const q = $("#us").value.trim(), qk = nkey(q);
+  const ul = Object.entries(users).filter(([id, u]) => !q || nkey(u.name || "").includes(qk) || id.includes(q))
+    .sort((a, b) => (a[1].name || "").localeCompare(b[1].name || "", "tr"));
+  $("#ul").innerHTML = ul.length ? ul.map(([id, u]) => {
+    const b = live(bans[id]) ? bans[id] : null;
+    const badge = b ? `<span class="b ${b.type === "mute" ? "mute" : "ban"}">${b.type === "mute" ? "Susturuldu" : "Yasaklı"} · ${left(b.until)}</span>` : "";
+    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div>
+      <div class="acts">${b ? `<button class="btn g s" data-a="unban" data-u="${esc(id)}">Yasağı kaldır</button>` : `<button class="btn a s" data-a="ban" data-u="${esc(id)}">Yasakla / Sustur</button>`}
+      <button class="btn g s" data-a="mail" data-u="${esc(id)}">Şifre e-postası</button>
+      <button class="btn g s" data-a="wipe" data-u="${esc(id)}">İçerikleri sil</button>
+      <button class="btn r s" data-a="del" data-u="${esc(id)}">Hesabı sil</button></div></div>`;
+  }).join("") : '<div class="empty">Kullanıcı yok. (Kullanıcılar yeni sürümle giriş yaptıkça burada görünür.)</div>';
+
+  const pq = nkey($("#ps").value);
+  const pl = Object.entries(posts).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0))
+    .filter(([, p]) => !pq || nkey((p.text || "") + (p.author || "")).includes(pq));
+  $("#pl").innerHTML = pl.length ? pl.map(([id, p]) => `<div class="item"><div><b>${esc(p.author)}</b> <span class="meta">${fmt(p.createdAt)}</span>
+    <div class="txt">${esc(p.text)}</div>${p.videoUrl ? `<div class="meta">${p.mediaType === "image" ? "🖼️ foto" : "🎬 video"}: <a href="${esc(p.videoUrl)}" target="_blank" rel="noopener" style="color:var(--green)">aç</a></div>` : ""}</div>
+    <div class="acts"><button class="btn r s" data-a="dpost" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Gönderi yok.</div>';
+
+  const sl = Object.entries(stories).sort((a, b) => b[1].createdAt - a[1].createdAt);
+  $("#sl").innerHTML = sl.length ? sl.map(([id, s]) => `<div class="th">${s.type === "image" ? `<img src="${esc(s.url)}" alt="" loading="lazy">` : `<video src="${esc(s.url)}" controls preload="metadata"></video>`}
+    <div class="meta"><b>${esc(s.author)}</b> · ${fmt(s.createdAt)}${Date.now() - s.createdAt > 864e5 ? " · süresi doldu" : ""}</div>
+    <button class="btn r s" data-a="dstory" data-u="${esc(id)}">Sil</button></div>`).join("") : '<div class="empty" style="grid-column:1/-1">Hikaye yok.</div>';
+
+  const bl = Object.entries(bans).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  $("#bl").innerHTML = bl.length ? bl.map(([id, b]) => `<div class="item"><div><b>${esc(nameOf(id))}</b><span class="b ${b.type === "mute" ? "mute" : "ban"}">${b.type === "mute" ? "Susturma" : "Yasak"}</span>
+    <div class="meta">${live(b) ? left(b.until) + " (bitiş: " + (b.until === 0 ? "yok" : fmt(b.until)) + ")" : "süresi doldu"} · Sebep: ${esc(b.reason || "-")} · ${esc(b.by || "")} · ${fmt(b.at)}</div></div>
+    <div class="acts"><button class="btn g s" data-a="unban" data-u="${esc(id)}">Kaldır</button></div></div>`).join("") : '<div class="empty">Yasak kaydı yok.</div>';
+
+  const ok = ann && ann.text && (!ann.until || ann.until > Date.now());
+  $("#annNow").textContent = ok ? "Yayındaki duyuru: " + ann.text + (ann.until ? " (bitiş: " + fmt(ann.until) + ")" : " (süresiz)") : "Şu an duyuru yok.";
+  const gl = Object.values(logs).slice(-60).reverse();
+  $("#gl").innerHTML = gl.length ? gl.map(l => `<div class="item"><div><b>${esc(l.action)}</b> <span class="meta">→ ${esc(l.target)}</span><div class="meta">${esc(l.by)} · ${fmt(l.at)}</div></div></div>`).join("") : '<div class="empty">Kayıt yok.</div>';
+}
+$("#us").oninput = $("#ps").oninput = render;
+$("#tabs").onclick = e => {
+  const b = e.target.closest("[data-t]"); if (!b) return;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  ["users", "posts", "stories", "bans", "ann", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+};
+
+/* ---- İşlemler ---- */
+async function wipe(uid) {
+  const jobs = [];
+  Object.entries(posts).forEach(([id, p]) => { if (p.uid === uid) { jobs.push(remove(dref(db, "posts/" + id))); jobs.push(remove(dref(db, "comments/" + id))); } });
+  Object.entries(stories).forEach(([id, s]) => { if (s.uid === uid) jobs.push(remove(dref(db, "stories/" + id))); });
+  const c = await get(dref(db, "comments"));
+  c.forEach(pc => pc.forEach(cc => { if (cc.val().uid === uid) jobs.push(remove(cc.ref)); }));
+  await Promise.all(jobs); return jobs.length;
+}
+async function setBan(uid, type, days, reason) {
+  await set(dref(db, "bans/" + uid), { type, until: days === 0 ? 0 : Date.now() + days * 864e5, reason, by: myName, at: serverTimestamp() });
+  log((type === "mute" ? "Susturma" : "Yasak") + " (" + (days === 0 ? "kalıcı" : days + " gün") + ")", nameOf(uid));
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-a]"); if (!b) return;
+  const a = b.dataset.a, id = b.dataset.u;
+  try {
+    if (a === "ban") { banTarget = id; $("#bt").textContent = nameOf(id) + " — yasakla / sustur"; $("#brs").value = ""; $("#dlg").showModal(); }
+    if (a === "unban") { if (confirm(nameOf(id) + " için yasak kaldırılsın mı?")) { await remove(dref(db, "bans/" + id)); log("Yasak kaldırıldı", nameOf(id)); } }
+    if (a === "mail") {
+      const m = await get(dref(db, "emails/" + id));
+      if (!m.exists()) return alert("Bu kullanıcının kayıtlı bir e-postası yok (kullanıcı adıyla kayıt olmuş olabilir veya henüz yeni sürümle giriş yapmamış).\n\nŞifresini unutmuşsa: Firebase konsolu → Authentication → Users bölümünden hesabı silip kullanıcıdan yeniden kayıt olmasını iste.");
+      if (confirm(m.val() + " adresine şifre sıfırlama e-postası gönderilsin mi?")) { await sendPasswordResetEmail(auth, m.val()); log("Şifre sıfırlama e-postası", nameOf(id)); alert("Gönderildi."); }
+    }
+    if (a === "wipe" && confirm(nameOf(id) + " kullanıcısının tüm gönderi, yorum ve hikayeleri silinsin mi?")) { const n = await wipe(id); log("İçerikler silindi (" + n + ")", nameOf(id)); alert(n + " kayıt silindi."); }
+    if (a === "del") {
+      const nm = nameOf(id);
+      if (prompt('Hesap kalıcı olarak kapatılacak ve içerikleri silinecek.\nOnaylamak için kullanıcının adını yaz: ' + nm) !== nm) return;
+      await wipe(id);
+      await remove(dref(db, "users/" + id)); await remove(dref(db, "presence/" + id)).catch(() => {});
+      await set(dref(db, "bans/" + id), { type: "ban", until: 0, reason: "Hesap yönetici tarafından kapatıldı", by: myName, at: serverTimestamp() });
+      log("Hesap silindi", nm);
+      alert("Hesap kapatıldı. Kullanıcı bir daha giriş yapamaz.\nGiriş kaydını tamamen kaldırmak istersen Firebase konsolu → Authentication → Users bölümünden de sil.");
+    }
+    if (a === "dpost" && confirm("Gönderi silinsin mi?")) { await remove(dref(db, "posts/" + id)); await remove(dref(db, "comments/" + id)); log("Gönderi silindi", posts[id]?.author || id); }
+    if (a === "dstory" && confirm("Hikaye silinsin mi?")) { await remove(dref(db, "stories/" + id)); log("Hikaye silindi", stories[id]?.author || id); }
+  } catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); }
+});
+$("#bdur").onchange = () => $("#bcus").classList.toggle("hide", $("#bdur").value !== "c");
+$("#bno").onclick = () => $("#dlg").close();
+$("#bf").onsubmit = async e => {
+  e.preventDefault();
+  let d = $("#bdur").value; d = d === "c" ? parseInt($("#bcus").value, 10) : parseInt(d, 10);
+  if (isNaN(d) || d < 0) return alert("Gün sayısını yaz.");
+  try { await setBan(banTarget, $("#btype").value, d, $("#brs").value.trim()); $("#dlg").close(); }
+  catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); }
+};
+$("#annSave").onclick = async () => {
+  const t = $("#at").value.trim(); if (!t) return alert("Duyuru metni yaz.");
+  const d = parseInt($("#ad").value, 10);
+  await set(dref(db, "announcement"), { text: t, until: d ? Date.now() + d * 864e5 : 0, by: myName, at: serverTimestamp() });
+  log("Duyuru yayınlandı", t.slice(0, 40)); $("#at").value = "";
+};
+$("#annDel").onclick = async () => { await remove(dref(db, "announcement")); log("Duyuru kaldırıldı", "-"); };
+</script>
+</body>
+</html>
