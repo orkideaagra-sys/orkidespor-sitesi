@@ -107,6 +107,7 @@ aside{display:none}main{border:0}
 .sname{position:absolute;top:calc(18px + env(safe-area-inset-top,0px));left:16px;color:#fff;font-weight:700;text-shadow:0 2px 8px #000}
 #sclose{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:2;background:rgba(0,0,0,.5);border:0;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer}
 .av{position:relative}.dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#42565e;border:2px solid var(--bg)}.dot.on{background:#3ddc97}
+#ann{padding:12px 18px;background:linear-gradient(90deg,var(--blue),var(--green2));font-weight:600}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style>
 </head>
@@ -146,6 +147,7 @@ aside{display:none}main{border:0}
     <header class="mtop"><span class="logo" data-logo>🌷</span><span>Orkide</span><button class="btn ghost" id="out2">Çıkış</button></header>
     <section id="home">
       <div class="top">Ana Sayfa</div>
+      <div id="ann" class="hide"></div>
       <div id="stories" class="stories"></div>
       <div class="compose hide" id="guestNote"><div class="meta" style="flex:1">Misafir olarak giriş yaptın, gönderileri okuyabilirsin. Paylaşım yapmak için hesap oluştur.</div><button class="btn" id="guestOut">Hesap oluştur</button></div>
       <div class="compose" id="composeBox">
@@ -362,7 +364,7 @@ $("#guest").onclick = async () => {
 $("#guestOut").onclick = () => signOut(auth).then(() => setMode(true));
 
 /* ---------- Oturum ---------- */
-let me = null, isAdmin = false, isGuest = false, unsubPosts, unsubPlayers, unsubUsers, chatUnsub, unsubStories, unsubConn;
+let me = null, isAdmin = false, isGuest = false, unsubPosts, unsubPlayers, unsubUsers, chatUnsub, unsubStories, unsubConn, unsubBan, unsubAnn;
 onAuthStateChanged(auth, u => {
   if (u) {
     const t = stamped();
@@ -375,7 +377,7 @@ onAuthStateChanged(auth, u => {
   $("#auth").classList.toggle("hide", !!u);
   $("#app").classList.toggle("hide", !u);
   $("#mnav").classList.toggle("hide", !u);
-  unsubPosts?.(); unsubPlayers?.(); unsubUsers?.(); chatUnsub?.(); unsubStories?.(); unsubConn?.();
+  unsubPosts?.(); unsubPlayers?.(); unsubUsers?.(); chatUnsub?.(); unsubStories?.(); unsubConn?.(); unsubBan?.(); unsubAnn?.();
   if (!u) return;
   const n = nameOf(u);
   $("#meName").textContent = n; $("#meAv").textContent = $("#cAv").textContent = n[0].toUpperCase();
@@ -388,8 +390,10 @@ onAuthStateChanged(auth, u => {
   isAdmin = ADMIN_EMAILS.map(x => x.toLowerCase()).includes((u.email || "").toLowerCase());
   $("#pName").textContent = n; $("#pAv").textContent = n[0].toUpperCase();
   get(dref(db, "users/" + u.uid)).then(d => $("#bio").value = d.exists() ? (d.val().bio || "") : "").catch(() => {});
-  listenPosts(); listenPlayers(); listenStories();
+  listenPosts(); listenPlayers(); listenStories(); listenAnn();
   if (!isGuest) { update(dref(db, "users/" + u.uid), { name: n }).catch(() => {}); listenUsers();
+    unsubBan = onValue(dref(db, "bans/" + u.uid), b => applyBan(b.val()));
+    if (u.email && !u.email.endsWith("@orkidespor.app")) set(dref(db, "emails/" + u.uid), u.email).catch(() => {});
     unsubConn = onValue(dref(db, ".info/connected"), c => { if (c.val()) { const pr = dref(db, "presence/" + u.uid); onDisconnect(pr).set(false); set(pr, true); } });
   }
 });
@@ -427,6 +431,7 @@ $("#text").oninput = () => $("#cnt").textContent = $("#text").value.length + "/2
 
 /* ---------- Gönderiler ---------- */
 $("#send").onclick = async () => {
+  if (isMuted()) return;
   const text = $("#text").value.trim(), vurl = $("#vurl").value.trim();
   if (!text && !file && !vurl) { $("#perr").textContent = "Bir şeyler yaz ya da video ekle."; return; }
   $("#send").disabled = true; $("#perr").textContent = "";
@@ -511,7 +516,7 @@ const feedClick = async e => {
 };
 $("#feed").onclick = feedClick; $("#myfeed").onclick = feedClick; $("#findFeed").onclick = feedClick;
 document.addEventListener("submit", async e => {
-  const f = e.target.closest("[data-cf]"); if (!f) return; e.preventDefault();
+  const f = e.target.closest("[data-cf]"); if (!f) return; e.preventDefault(); if (isMuted()) return;
   const inp = f.querySelector("input"), text = inp.value.trim(); if (!text) return;
   inp.value = "";
   await push(dref(db, "comments/" + f.dataset.cf), { uid: me.uid, author: nameOf(me), text, createdAt: serverTimestamp() });
@@ -581,7 +586,7 @@ $("#dmUsers").onclick = e => { const b = e.target.closest("[data-dm]"); if (b) o
 $("#dmSearch").oninput = renderUsers;
 $("#dmBack").onclick = () => { chatUnsub?.(); chatWith = null; $("#dmChat").classList.add("hide"); $("#dmList").classList.remove("hide"); };
 $("#dmForm").onsubmit = async e => {
-  e.preventDefault(); const t = $("#dmText").value.trim(); if (!t || !chatWith) return; $("#dmText").value = "";
+  e.preventDefault(); if (isMuted()) return; const t = $("#dmText").value.trim(); if (!t || !chatWith) return; $("#dmText").value = "";
   try { await push(dref(db, "dms/" + chatId(me.uid, chatWith)), { from: me.uid, text: t, createdAt: serverTimestamp() }); }
   catch (err) { alert("Mesaj gönderilemedi: " + (err.code || err.message)); }
 };
@@ -650,6 +655,30 @@ document.addEventListener("click", e => {
     else navigator.clipboard?.writeText(text + " " + url).then(() => alert("Kopyalandı"));
   }
 });
+
+/* ---------- Yönetici kararları: yasak, susturma, duyuru ---------- */
+let myBan = null;
+const banEnd = x => x.until === 0 ? "kalıcı" : new Date(x.until).toLocaleString("tr-TR") + " tarihine kadar";
+function applyBan(b) {
+  if (b && b.until !== 0 && b.until < Date.now()) { remove(dref(db, "bans/" + me.uid)).catch(() => {}); b = null; }
+  myBan = b;
+  if (b && b.type !== "mute") {
+    const msg = "Hesabın yasaklandı (" + banEnd(b) + ")." + (b.reason ? " Sebep: " + b.reason : "");
+    signOut(auth).then(() => { $("#err").style.color = ""; $("#err").textContent = msg; });
+  }
+}
+function isMuted() {
+  if (myBan && myBan.until !== 0 && myBan.until < Date.now()) { remove(dref(db, "bans/" + me.uid)).catch(() => {}); myBan = null; }
+  if (!myBan) return false;
+  alert("Susturuldun, bu yüzden paylaşım yapamazsın (" + banEnd(myBan) + ")." + (myBan.reason ? "\nSebep: " + myBan.reason : ""));
+  return true;
+}
+function listenAnn() {
+  unsubAnn = onValue(dref(db, "announcement"), s => {
+    const a = s.val(), ok = a && a.text && (!a.until || a.until > Date.now());
+    $("#ann").textContent = ok ? "📢 " + a.text : ""; $("#ann").classList.toggle("hide", !ok);
+  });
+}
 </script>
 </body>
 </html>
