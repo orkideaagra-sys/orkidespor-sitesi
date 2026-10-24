@@ -109,6 +109,9 @@ aside{display:none}main{border:0}
 .av{position:relative}.dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#42565e;border:2px solid var(--bg)}.dot.on{background:#3ddc97}
 #ann{padding:12px 18px;background:linear-gradient(90deg,var(--blue),var(--green2));font-weight:600}
 #maint,#warn{position:fixed;inset:0;z-index:60;background:rgba(3,12,18,.94);display:grid;place-items:center;padding:16px}
+.btn.s{padding:4px 12px;min-height:34px;font-size:14px}.btn.rec{background:var(--red);color:#fff}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:18px}
+.vgrid video{width:100%;aspect-ratio:16/9;border-radius:14px;background:#000}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style>
 </head>
@@ -139,6 +142,7 @@ aside{display:none}main{border:0}
     <div class="brand"><span class="logo" data-logo>🌷</span><span>Orkide</span></div>
     <button class="nav on" data-view="home">🏠 <span>Ana Sayfa</span></button>
     <button class="nav" data-view="players">⚽ <span>Oyuncular</span></button>
+    <button class="nav" data-view="videos">🎬 <span>Videolar</span></button>
     <button class="nav" data-view="messages">💬 <span>Mesajlar</span></button>
     <button class="nav" data-view="profile">👤 <span>Profil</span></button>
     <div class="user"><div class="av" id="meAv" style="width:36px;height:36px"></div><span id="meName"></span><button class="btn ghost" id="out" title="Çıkış" style="padding:6px 12px">↩</button></div>
@@ -175,9 +179,12 @@ aside{display:none}main{border:0}
       
       <div class="players" id="plist"></div>
     </section>
+    <section id="videos" class="hide"><div class="top">Videolar</div><div class="vgrid" id="vgrid"></div></section>
+
     <section id="find" class="hide">
       <div class="top">Ara</div>
       <div style="padding:12px 18px"><input class="f" id="search2" placeholder="Gönderi veya kişi ara"></div>
+      <div id="findPeople"></div>
       <div style="padding:0 18px 8px"><h3>Gündem</h3><div id="trends2"></div></div>
       <div id="findFeed"></div>
     </section>
@@ -192,7 +199,7 @@ aside{display:none}main{border:0}
         <div class="top"><button class="btn ghost" id="dmBack" style="padding:4px 12px;margin-right:8px">←</button><span id="dmWith"></span></div>
         <div id="dmMsgs"></div>
         <div id="dmTyping" class="meta hide" style="padding:0 18px 8px">yazıyor…</div>
-        <form id="dmForm" class="cform"><input class="f" id="dmText" maxlength="500" placeholder="Mesaj yaz…" required autocomplete="off"><button class="btn">Gönder</button></form>
+        <form id="dmForm" class="cform"><input class="f" id="dmText" maxlength="500" placeholder="Mesaj yaz…" required autocomplete="off"><button type="button" class="btn ghost" id="dmMic" title="Sesli mesaj">🎤</button><button class="btn">Gönder</button></form>
       </div>
     </section>
 
@@ -219,10 +226,11 @@ aside{display:none}main{border:0}
 <div id="maint" class="hide"><div class="box"><h2>🛠️ Bakım</h2><p id="maintMsg"></p></div></div>
 <div id="warn" class="hide"><div class="box"><h2>⚠️ Yönetici uyarısı</h2><div id="warnText"></div><button class="btn" id="warnOk">Anladım</button></div></div>
 <div id="sview" class="hide"><button id="sclose">✕</button><div id="sbody"></div></div>
-<input type="file" id="sfile" accept="image/*,video/*" hidden>
+<input type="file" id="sfile" accept="image/*" hidden>
 <nav class="mnav hide" id="mnav">
   <button data-view="home" class="on"><b>🏠</b>Ana Sayfa</button>
   <button data-view="players"><b>⚽</b>Oyuncular</button>
+  <button data-view="videos"><b>🎬</b>Video</button>
   <button data-view="messages"><b>💬</b>Mesajlar</button>
   <button data-view="find"><b>🔍</b>Ara</button>
   <button data-view="profile"><b>👤</b>Profil</button>
@@ -234,6 +242,8 @@ aside{display:none}main{border:0}
 //    - Logo: deponun ana klasörüne "logo" adıyla koy (logo.png, logo.jpg ... uzantı fark etmez)
 //    - Oyuncu fotoğrafları: depoda ana klasöre 1.jpeg, 2.png gibi koy (PLAYERS listesindeki photo numarasıyla eşleşir)
 const GITHUB_REPO = "orkideaagra-sys/orkidespor-sitesi";
+const GH_DIR = "VERİLER,VİDEOLAR.MESAJLKAR. OZEL BİLGİLER";   // "Videolar" sekmesi bu depo klasöründeki videoları gösterir
+const UPLOAD_URL = "https://orkide-upload.orkideaagra.workers.dev";   // Video yükleme aracısının (Cloudflare Worker) adresi. Kurulumdan sonra buraya yaz.
 const PHOTO_DIR = "";   // fotoğraflar deponun ana klasöründe (1.jpeg, 2.png ...). "oyuncular" klasörü kullanacaksan buraya "oyuncular" yaz.
 
 // 1.2) OYUNCULAR: her satır bir oyuncu. Buradan değiştirebilirsin:
@@ -285,11 +295,11 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const IMG_EXT = /\.(png|jpe?g|jpe|jfif|pjp|gif|webp|svg|avif|bmp|ico|apng)$/i;
 const noExt = n => n.replace(/\.[^.]+$/, "");
 const nkey = t => t.toLocaleLowerCase("tr").replace(/ı/g, "i").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
-const fileUrl = (dir, name) => (dir ? dir + "/" : "") + encodeURIComponent(name);
+const fileUrl = (dir, name) => (dir ? dir.split("/").map(encodeURIComponent).join("/") + "/" : "") + encodeURIComponent(name);
 async function listRepo(path) {
   const ck = "orkide_gh_" + path;
   try { const c = JSON.parse(sessionStorage.getItem(ck)); if (c && Date.now() - c.t < 600000) return c.d; } catch {}
-  const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents${path ? "/" + path : ""}`);
+  const r = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents${path ? "/" + path.split("/").map(encodeURIComponent).join("/") : ""}`);
   if (!r.ok) throw new Error(r.status);
   const d = (await r.json()).filter(f => f.type === "file").map(f => f.name);
   try { sessionStorage.setItem(ck, JSON.stringify({ t: Date.now(), d })); } catch {}
@@ -368,7 +378,7 @@ $("#guest").onclick = async () => {
 $("#guestOut").onclick = () => signOut(auth).then(() => setMode(true));
 
 /* ---------- Oturum ---------- */
-let me = null, isAdmin = false, isGuest = false, unsubPosts, unsubPlayers, unsubUsers, chatUnsub, unsubStories, unsubConn, unsubBan, unsubAnn, unsubWarn;
+let me = null, isAdmin = false, isGuest = false, unsubPosts, unsubPlayers, unsubUsers, chatUnsub, unsubStories, unsubConn, unsubBan, unsubAnn, unsubWarn, unsubBlocks;
 onAuthStateChanged(auth, u => {
   if (u) {
     const t = stamped();
@@ -382,7 +392,7 @@ onAuthStateChanged(auth, u => {
   $("#auth").classList.toggle("hide", !!u);
   $("#app").classList.toggle("hide", !u);
   $("#mnav").classList.toggle("hide", !u);
-  unsubPosts?.(); unsubPlayers?.(); unsubUsers?.(); chatUnsub?.(); unsubStories?.(); unsubConn?.(); unsubBan?.(); unsubAnn?.(); unsubWarn?.();
+  unsubPosts?.(); unsubPlayers?.(); unsubUsers?.(); chatUnsub?.(); unsubStories?.(); unsubConn?.(); unsubBan?.(); unsubAnn?.(); unsubWarn?.(); unsubBlocks?.();
   if (!u) return;
   const n = nameOf(u);
   $("#meName").textContent = n; $("#meAv").textContent = $("#cAv").textContent = n[0].toUpperCase();
@@ -395,9 +405,10 @@ onAuthStateChanged(auth, u => {
   isAdmin = ADMIN_EMAILS.map(x => x.toLowerCase()).includes((u.email || "").toLowerCase());
   $("#pName").textContent = n; $("#pAv").textContent = n[0].toUpperCase();
   get(dref(db, "users/" + u.uid)).then(d => $("#bio").value = d.exists() ? (d.val().bio || "") : "").catch(() => {});
-  listenPosts(); listenPlayers(); listenStories(); listenAnn();
+  listenPosts(); listenPlayers(); listenStories(); listenAnn(); loadVideos();
   if (!isGuest) { update(dref(db, "users/" + u.uid), { name: n }).catch(() => {}); listenUsers();
     unsubBan = onValue(dref(db, "bans/" + u.uid), b => applyBan(b.val()));
+    unsubBlocks = onValue(dref(db, "blocks/" + u.uid), s => { myBlocks = s.val() || {}; renderFeeds(); renderStories(); renderUsers(); });
     unsubWarn = onValue(dref(db, "warnings/" + u.uid), w => {
       const l = []; w.forEach(c => l.push(c.val()));
       $("#warn").classList.toggle("hide", !l.length);
@@ -412,7 +423,7 @@ onAuthStateChanged(auth, u => {
 document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => {
   const v = b.dataset.view;
   document.querySelectorAll("[data-view]").forEach(x => x.classList.toggle("on", x.dataset.view === v));
-  ["home", "players", "messages", "find", "profile"].forEach(id => $("#" + id).classList.toggle("hide", v !== id));
+  ["home", "players", "videos", "messages", "find", "profile"].forEach(id => $("#" + id).classList.toggle("hide", v !== id));
   if (v === "home") setSearch("");
   window.scrollTo(0, 0);
 });
@@ -432,7 +443,8 @@ const videoHTML = url => {
 let file = null;
 $("#vfile").onchange = e => {
   file = e.target.files[0]; if (!file) return;
-  if (file.size > 100 * 1024 * 1024) { $("#perr").textContent = "Video en fazla 100 MB olabilir."; file = null; return; }
+  if (!file.type.startsWith("image") && (!UPLOAD_URL || !file.type.startsWith("video"))) { $("#perr").textContent = "Video için YouTube veya video bağlantısını yandaki kutuya yapıştır."; file = null; e.target.value = ""; return; }
+  if (file.type.startsWith("video") && file.size > 20 * 1024 * 1024) { $("#perr").textContent = "Video en fazla 20 MB olabilir."; file = null; e.target.value = ""; return; }
   const isI = file.type.startsWith("image"), u = URL.createObjectURL(file);
   $("#prevImg").src = u; $("#prevImg").classList.toggle("hide", !isI);
   $("#prev").src = isI ? "" : u; $("#prev").classList.toggle("hide", isI); $("#perr").textContent = "";
@@ -450,17 +462,18 @@ $("#send").onclick = async () => {
   $("#send").disabled = true; $("#perr").textContent = "";
   try {
     let videoUrl = vurl;
-    if (file) {
-      const r = ref(storage, `${file.type.startsWith("image") ? "images" : "videos"}/${me.uid}/${Date.now()}_${file.name.replace(/[^\w.-]/g,"_")}`);
-      const task = uploadBytesResumable(r, file);
-      await new Promise((ok, no) => task.on("state_changed",
-        s => $("#send").textContent = "%" + Math.round(100 * s.bytesTransferred / s.totalBytes), no, ok));
-      videoUrl = await getDownloadURL(r);
+    let mediaRef = "";
+    if (file && file.type.startsWith("image")) {
+      const mr = push(dref(db, "media")); mediaRef = mr.key;
+      await set(mr, { uid: me.uid, data: await compressImage(file) });
+    } else if (file) {
+      videoUrl = await uploadVideo(file);
     }
     await push(dref(db, "posts"), {
       uid: me.uid, author: nameOf(me),
-      text, videoUrl, mediaType: file ? (file.type.startsWith("image") ? "image" : "video") : (vurl ? (IMG_EXT.test(vurl.split("?")[0]) ? "image" : "video") : ""), createdAt: serverTimestamp()
+      text, videoUrl, mediaRef, mediaType: file ? (file.type.startsWith("image") ? "image" : "video") : (vurl ? (IMG_EXT.test(vurl.split("?")[0]) ? "image" : "video") : ""), createdAt: serverTimestamp()
     });
+    if (file && file.type.startsWith("video")) alert("Videon yüklendi. GitHub'ın yayına alması 1-2 dakika sürer, o zamana kadar oynatılamayabilir.");
     try { localStorage.setItem("orkide_last_post", String(Date.now())); } catch {}
     $("#text").value = ""; $("#vurl").value = ""; $("#vfile").value = ""; file = null;
     $("#prev").classList.add("hide"); $("#prevImg").classList.add("hide"); $("#cnt").textContent = "0/280";
@@ -470,10 +483,10 @@ $("#send").onclick = async () => {
 
 let allDocs = [], term = "";
 const openSet = new Set(), cache = {}, subs = {};
-const cmHTML = id => (cache[id] || []).map(c => `<div class="cmt"><b>${esc(c.author)}</b> <span class="meta">${ago(c.createdAt)}</span><div>${esc(c.text)}</div></div>`).join("")
+const cmHTML = id => (cache[id] || []).filter(c => !myBlocks[c.uid]).map(c => `<div class="cmt"><b>${esc(c.author)}</b> <span class="meta">${ago(c.createdAt)}</span><div>${esc(c.text)}</div></div>`).join("")
   + (isGuest ? "" : `<form class="cform" data-cf="${id}"><input class="f" maxlength="200" placeholder="Yanıt yaz…" required><button class="btn">Yanıtla</button></form>`);
 const paintCm = id => document.querySelectorAll(`[data-cm="${id}"]`).forEach(el => { el.classList.remove("hide"); el.innerHTML = cmHTML(id); });
-const mediaHTML = (p, id) => p.mediaType === "image" ? `<div class="media" data-dbl="${id}"><img src="${esc(p.videoUrl)}" alt="" loading="lazy"><span class="heart">♥</span></div>` : videoHTML(p.videoUrl);
+const mediaHTML = (p, id) => p.mediaType === "image" ? `<div class="media" data-dbl="${id}"><img ${p.mediaRef ? `data-mref="${esc(p.mediaRef)}"` : `src="${esc(p.videoUrl)}"`} alt="" loading="lazy"><span class="heart">♥</span></div>` : videoHTML(p.videoUrl);
 const linkTags = h => h.replace(/(^|\s)#([\p{L}_][\p{L}\p{N}_]*)/gu, '$1<a href="#" data-tag="$2">#$2</a>');
 const postHTML = d => {
   const p = d.data(), liked = (p.likes || []).includes(me.uid), open = openSet.has(d.id);
@@ -482,19 +495,20 @@ const postHTML = d => {
     ${p.text ? `<div class="txt">${linkTags(esc(p.text))}</div>` : ""}${mediaHTML(p, d.id)}
     <div class="act"><button data-cbtn="${d.id}">💬 ${p.commentsCount || 0}</button>
     <button data-share="${d.id}">📤</button>
-    ${!isGuest && p.uid !== me.uid ? `<button data-rep="${d.id}">🚩</button>` : ""}
+    ${!isGuest && p.uid !== me.uid ? `<button data-rep="${d.id}">🚩</button><button data-blk="${esc(p.uid)}">⛔</button>` : ""}
     <button class="${liked ? "liked" : ""}" data-like="${d.id}" data-on="${liked}">${liked ? "♥" : "♡"} ${(p.likes || []).length}</button>
     ${p.uid === me.uid ? `<button class="del" data-del="${d.id}">Sil</button>` : ""}</div>
     <div class="cms ${open ? "" : "hide"}" data-cm="${d.id}">${open ? cmHTML(d.id) : ""}</div></div></article>`;
 };
 function renderFeeds() {
-  const ok = d => { const p = d.data(); return !term || (p.text || "").toLowerCase().includes(term) || (p.author || "").toLowerCase().includes(term); };
+  const ok = d => { const p = d.data(); if (myBlocks[p.uid]) return false; return !term || (p.text || "").toLowerCase().includes(term) || (p.author || "").toLowerCase().includes(term); };
   const f = allDocs.filter(ok).sort((x, y) => (y.id === settings.pinned) - (x.id === settings.pinned)), mine = allDocs.filter(d => d.data().uid === me.uid);
   $("#feed").innerHTML = f.length ? f.map(postHTML).join("") : `<div class="empty">${term ? "Aramayla eşleşen gönderi yok." : "Henüz gönderi yok. İlk gönderiyi sen paylaş."}</div>`;
   $("#myfeed").innerHTML = mine.length ? mine.map(postHTML).join("") : '<div class="empty">Henüz gönderin yok.</div>';
   $("#pcount").textContent = mine.length + " gönderi";
   $("#findFeed").innerHTML = term ? (f.length ? f.map(postHTML).join("") : '<div class="empty">Eşleşen gönderi yok.</div>') : '<div class="empty">Aramak için bir şey yaz.</div>';
   $("#filterBar").classList.toggle("hide", !term); $("#filterText").textContent = "Filtre: " + term;
+  hydrate(); renderPeople();
   const cnt = {};
   allDocs.forEach(d => ((d.data().text || "").match(/(?:^|\s)#[\p{L}_][\p{L}\p{N}_]*/gu) || []).forEach(t => { t = t.trim().toLowerCase(); cnt[t] = (cnt[t] || 0) + 1; }));
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -516,7 +530,7 @@ $("#filterClear").onclick = () => setSearch("");
 const feedClick = async e => {
   const l = e.target.closest("[data-like]"), d = e.target.closest("[data-del]"), c = e.target.closest("[data-cbtn]");
   if (l) { const r = dref(db, `posts/${l.dataset.like}/likes/${me.uid}`); l.dataset.on === "true" ? remove(r) : set(r, true); }
-  if (d && confirm("Bu gönderi silinsin mi?")) remove(dref(db, "posts/" + d.dataset.del));
+  if (d && confirm("Bu gönderi silinsin mi?")) { const dd = allDocs.find(x => x.id === d.dataset.del); if (dd?.data().mediaRef) remove(dref(db, "media/" + dd.data().mediaRef)).catch(() => {}); remove(dref(db, "posts/" + d.dataset.del)); }
   if (c) {
     const id = c.dataset.cbtn;
     if (openSet.has(id)) { openSet.delete(id); subs[id]?.(); document.querySelectorAll(`[data-cm="${id}"]`).forEach(el => el.classList.add("hide")); }
@@ -578,7 +592,8 @@ function listenUsers() {
   unsubUsers = () => { u1(); u2(); };
 }
 function renderUsers() {
-  const q = nkey($("#dmSearch").value), l = allUsers.filter(u => !q || nkey(u.name).includes(q)).sort((a, b) => (online[b.uid] ? 1 : 0) - (online[a.uid] ? 1 : 0));
+  renderPeople();
+  const q = nkey($("#dmSearch").value), l = allUsers.filter(u => !myBlocks[u.uid] && (!q || nkey(u.name).includes(q))).sort((a, b) => (online[b.uid] ? 1 : 0) - (online[a.uid] ? 1 : 0));
   $("#dmUsers").innerHTML = l.length ? l.map(u => `<button class="dmu" data-dm="${esc(u.uid)}"><div class="av">${esc(u.name[0].toUpperCase())}<i class="dot ${online[u.uid] ? "on" : ""}"></i></div><div><b>${esc(u.name)}</b><div class="meta">${online[u.uid] ? "Çevrimiçi" : "Çevrimdışı"}</div></div></button>`).join("")
     : '<div class="empty">Kimse bulunamadı.</div>';
 }
@@ -590,7 +605,7 @@ function openChat(uid) {
   $("#dmTyping").classList.add("hide");
   const c1 = onValue(dref(db, "dms/" + chatId(me.uid, uid)), snap => {
     const a = []; snap.forEach(c => a.push(c.val())); a.sort((x, y) => (x.createdAt || 0) - (y.createdAt || 0));
-    $("#dmMsgs").innerHTML = a.length ? a.map(m => `<div class="bub ${m.from === me.uid ? "mine" : ""}">${esc(m.text)}<small>${ago(m.createdAt)}</small></div>`).join("")
+    $("#dmMsgs").innerHTML = a.length ? a.filter(m => !myBlocks[m.from]).map(m => `<div class="bub ${m.from === me.uid ? "mine" : ""}">${m.audio ? `<audio controls preload="metadata" src="${esc(m.audio)}" style="max-width:220px"></audio>` : esc(m.text)}<small>${ago(m.createdAt)}</small></div>`).join("")
       : '<div class="empty">Henüz mesaj yok. İlk mesajı sen yaz.</div>';
     window.scrollTo(0, document.body.scrollHeight);
   }, e => $("#dmMsgs").innerHTML = `<div class="empty">Mesajlar yüklenemedi (${esc(e.code)}). Kuralları kontrol et.</div>`);
@@ -620,7 +635,7 @@ function listenStories() {
   });
 }
 function renderStories() {
-  const by = {}; stories.forEach(x => (by[x.uid] ||= []).push(x));
+  const by = {}; stories.filter(x => !myBlocks[x.uid]).forEach(x => (by[x.uid] ||= []).push(x));
   $("#stories").innerHTML = (isGuest ? "" : '<button class="story" id="addStory"><div class="ring add"><div class="av">+</div></div><small>Hikayen</small></button>')
     + Object.entries(by).map(([uid, l]) => `<button class="story" data-story="${esc(uid)}"><div class="ring"><div class="av">${esc((l[0].author || "?")[0].toUpperCase())}</div></div><small>${esc(l[0].author)}</small></button>`).join("");
 }
@@ -628,7 +643,8 @@ function showStory() {
   clearTimeout(sv.t); const x = sv.list[sv.i];
   if (!x) { $("#sview").classList.add("hide"); $("#sbody").innerHTML = ""; return; }
   $("#sview").classList.remove("hide");
-  $("#sbody").innerHTML = (x.type === "image" ? `<img src="${esc(x.url)}" alt="">` : `<video src="${esc(x.url)}" autoplay playsinline></video>`) + `<div class="sname">${esc(x.author)} · ${ago(x.createdAt)}</div>`;
+  $("#sbody").innerHTML = (x.type === "image" ? `<img ${x.mediaRef ? `data-mref="${esc(x.mediaRef)}"` : `src="${esc(x.url)}"`} alt="">` : `<video src="${esc(x.url)}" autoplay playsinline></video>`) + `<div class="sname">${esc(x.author)} · ${ago(x.createdAt)}</div>`;
+  const sim = $("#sbody img"); if (sim) loadImg(sim);
   if (x.type === "image") sv.t = setTimeout(() => { sv.i++; showStory(); }, 5000);
   else $("#sbody video").onended = () => { sv.i++; showStory(); };
 }
@@ -643,11 +659,10 @@ $("#sview").onclick = e => {
 };
 $("#sfile").onchange = async e => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
-  if (f.size > 50 * 1024 * 1024) return alert("Dosya en fazla 50 MB olabilir.");
+  if (!f.type.startsWith("image")) return alert("Hikayeye şimdilik sadece fotoğraf eklenebilir.");
   try {
-    const r = ref(storage, `stories/${me.uid}/${Date.now()}_${f.name.replace(/[^\w.-]/g, "_")}`);
-    await uploadBytesResumable(r, f);
-    await push(dref(db, "stories"), { uid: me.uid, author: nameOf(me), url: await getDownloadURL(r), type: f.type.startsWith("image") ? "image" : "video", createdAt: serverTimestamp() });
+    const mr = push(dref(db, "media")); await set(mr, { uid: me.uid, data: await compressImage(f) });
+    await push(dref(db, "stories"), { uid: me.uid, author: nameOf(me), url: "", mediaRef: mr.key, type: "image", createdAt: serverTimestamp() });
   } catch (err) { alert("Hikaye yüklenemedi: " + (err.code || err.message)); }
 };
 
@@ -728,6 +743,98 @@ document.addEventListener("click", e => {
   push(dref(db, "reports"), { postId: d.id, author: p.author, text: (p.text || "[medya]").slice(0, 160), reason: reason.trim(), by: nameOf(me), byUid: me.uid, at: serverTimestamp() })
     .then(() => alert("Şikayetin yöneticilere iletildi.")).catch(err => alert("Gönderilemedi: " + (err.code || err.message)));
 });
+
+/* ---------- Fotoğraf (veritabanı), engelleme, kişi arama, sesli mesaj, videolar ---------- */
+let myBlocks = {};
+const mcache = {};
+const compressImage = (file, max = 900, q = 0.72) => new Promise((ok, no) => {
+  const im = new Image(), u = URL.createObjectURL(file);
+  im.onload = () => {
+    const k = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement("canvas");
+    c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL("image/jpeg", q));
+  };
+  im.onerror = () => no(new Error("Fotoğraf okunamadı")); im.src = u;
+});
+const loadImg = im => {
+  const k = im.dataset.mref; if (!k) return;
+  (mcache[k] ||= get(dref(db, "media/" + k)).then(s => s.val()?.data || "")).then(d => { im.src = d; }).catch(() => {});
+};
+const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { io.unobserve(en.target); loadImg(en.target); } }), { rootMargin: "400px" });
+function hydrate() { document.querySelectorAll("img[data-mref]:not([src]):not([data-obs])").forEach(im => { im.dataset.obs = "1"; io.observe(im); }); }
+
+function renderPeople() {
+  const el = $("#findPeople"); if (!el || !me) return;
+  if (isGuest) { el.innerHTML = ""; return; }
+  const q = nkey(term), blocked = Object.keys(myBlocks);
+  const row = (u, b) => `<div class="dmu" style="cursor:default"><div class="av">${esc((u.name || "?")[0].toUpperCase())}</div><div style="flex:1"><b>${esc(u.name)}</b></div>${b ? "" : `<button class="btn s" data-pmsg="${esc(u.uid)}">💬</button>`}<button class="btn ghost s" data-pblk="${esc(u.uid)}" data-on="${b ? 1 : 0}">${b ? "Engeli kaldır" : "⛔ Engelle"}</button></div>`;
+  const rows = q ? allUsers.filter(u => nkey(u.name).includes(q)) : [];
+  el.innerHTML = (q ? '<div class="top" style="position:static">Kişiler</div>' + (rows.length ? rows.map(u => row(u, myBlocks[u.uid])).join("") : '<div class="empty">Kişi bulunamadı.</div>') : "")
+    + (!q && blocked.length ? '<div class="top" style="position:static">Engellediklerim</div>' + blocked.map(id => row({ uid: id, name: (allUsers.find(x => x.uid === id) || {}).name || "Kullanıcı" }, true)).join("") : "");
+}
+document.addEventListener("click", e => {
+  const bl = e.target.closest("[data-blk],[data-pblk]");
+  if (bl) {
+    const uid = bl.dataset.blk || bl.dataset.pblk, r = dref(db, `blocks/${me.uid}/${uid}`);
+    if (bl.dataset.on === "1") remove(r); else if (confirm("Bu kişi engellensin mi? Gönderilerini, yorumlarını ve mesajlarını görmeyeceksin.")) set(r, true);
+    return;
+  }
+  const pm = e.target.closest("[data-pmsg]");
+  if (pm) { document.querySelector('[data-view="messages"]').click(); openChat(pm.dataset.pmsg); }
+});
+
+let rec = null, recTimer = null;
+$("#dmMic").onclick = async () => {
+  if (rec) { rec.stop(); return; }
+  if (!chatWith || isMuted()) return;
+  if (settings.dmOff && !adminFlag) return alert("Mesajlaşma geçici olarak kapalı.");
+  if (!navigator.mediaDevices || !window.MediaRecorder) return alert("Bu tarayıcı ses kaydını desteklemiyor.");
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: true }), chunks = [], to = chatWith, t0 = Date.now();
+    const mt = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(x => MediaRecorder.isTypeSupported(x)) || "";
+    rec = new MediaRecorder(st, mt ? { mimeType: mt, audioBitsPerSecond: 24000 } : {});
+    rec.ondataavailable = ev => { if (ev.data.size) chunks.push(ev.data); };
+    rec.onstop = async () => {
+      clearInterval(recTimer); st.getTracks().forEach(x => x.stop());
+      $("#dmMic").textContent = "🎤"; $("#dmMic").classList.remove("rec");
+      const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" }); rec = null;
+      if (blob.size < 1500) return;
+      const data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); });
+      try { await push(dref(db, "dms/" + chatId(me.uid, to)), { from: me.uid, audio: data, dur: Math.round((Date.now() - t0) / 1000), createdAt: serverTimestamp() }); }
+      catch (err) { alert("Sesli mesaj gönderilemedi: " + (err.code || err.message)); }
+    };
+    rec.start(); $("#dmMic").classList.add("rec");
+    recTimer = setInterval(() => { const s = Math.round((Date.now() - t0) / 1000); $("#dmMic").textContent = "⏹ " + s + "s"; if (s >= 60 && rec) rec.stop(); }, 500);
+  } catch { alert("Mikrofon izni verilmedi."); }
+};
+
+let vidsLoaded = false;
+function loadVideos() {
+  if (vidsLoaded) return; vidsLoaded = true;
+  listRepo(GH_DIR).then(files => {
+    const v = files.filter(n => /\.(mp4|webm|mov|m4v|ogv)$/i.test(n));
+    $("#vgrid").innerHTML = v.length ? v.map(n => `<div class="pl" style="text-align:left"><video src="${esc(fileUrl(GH_DIR, n))}" controls preload="metadata" playsinline></video><b style="display:block;margin-top:6px;word-break:break-word">${esc(noExt(n))}</b></div>`).join("")
+      : '<div class="empty" style="grid-column:1/-1">Henüz video yok.</div>';
+  }).catch(() => { $("#vgrid").innerHTML = '<div class="empty" style="grid-column:1/-1">Videolar yüklenemedi.</div>'; });
+}
+
+/* ---------- Video yükleme (Cloudflare Worker üzerinden GitHub deposuna) ---------- */
+function uploadVideo(f) {
+  return new Promise(async (ok, no) => {
+    try {
+      const idt = await me.getIdToken();
+      const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(",")[1]); fr.onerror = rej; fr.readAsDataURL(f); });
+      const x = new XMLHttpRequest(); x.open("POST", UPLOAD_URL);
+      x.setRequestHeader("Authorization", "Bearer " + idt);
+      x.setRequestHeader("X-Filename", encodeURIComponent(f.name));
+      x.setRequestHeader("Content-Type", "application/json");
+      x.upload.onprogress = e => { if (e.lengthComputable) $("#send").textContent = "%" + Math.round(100 * e.loaded / e.total); };
+      x.onload = () => { let r = {}; try { r = JSON.parse(x.responseText); } catch {} x.status === 200 && r.url ? ok(r.url) : no(new Error(r.error || "Yükleme başarısız (" + x.status + ")")); };
+      x.onerror = () => no(new Error("Bağlantı hatası"));
+      x.send(JSON.stringify({ message: "Video yüklemesi", content: b64, branch: "main" }));
+    } catch (e) { no(e); }
+  });
+}
 </script>
 </body>
 </html>
