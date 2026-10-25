@@ -87,11 +87,13 @@ dialog form{display:grid;gap:10px}
       <button class="btn g" data-t="posts">📝 Gönderiler</button>
       <button class="btn g" data-t="stories">🎞️ Hikayeler</button>
       <button class="btn g" data-t="comments">💬 Yorumlar</button>
+      <button class="btn g" data-t="match">⚽ Maçlar</button>
       <button class="btn g" data-t="reports">🚩 Şikayetler</button>
       <button class="btn g" data-t="bans">⛔ Yasaklar</button>
       <button class="btn g" data-t="mods" data-patron>🛡️ Moderatörler</button>
       <button class="btn g" data-t="ann" data-patron>📢 Duyuru</button>
       <button class="btn g" data-t="set" data-patron>⚙️ Site Ayarları</button>
+      <button class="btn g" data-t="gh" data-patron>📁 Depo</button>
       <button class="btn g" data-t="log" data-patron>📜 Kayıt</button>
     </div>
 
@@ -121,6 +123,29 @@ dialog form{display:grid;gap:10px}
     </section>
     <section id="t-stories" class="hide"><button class="btn g s" id="cleanSt" style="margin-top:12px">Süresi dolan hikayeleri temizle</button><div class="thumbs" id="sl"></div></section>
     <section id="t-comments" class="hide"><input class="f" id="cs" placeholder="Yorum veya kişi ara" style="margin-top:12px"><div id="cl"></div></section>
+    <section id="t-match" class="hide">
+      <div class="box" style="margin-top:12px">
+        <b>📅 Fikstür / antrenman ekle</b>
+        <select class="f" id="mt"><option value="mac">Maç</option><option value="antrenman">Antrenman</option></select>
+        <input class="f" id="mo" placeholder="Rakip takım (maç için)">
+        <input class="f" id="mw" type="datetime-local">
+        <input class="f" id="mp" placeholder="Yer (saha)">
+        <label class="sw"><input type="checkbox" id="mh" checked> Ev sahibiyiz</label>
+        <button class="btn" id="mAdd" style="justify-self:start">Ekle</button>
+      </div>
+      <div id="ml2"></div>
+      <div class="box" style="margin-top:12px">
+        <b>🔴 Canlı maç kontrolü</b>
+        <input class="f" id="lo" placeholder="Rakip takım">
+        <label class="sw"><input type="checkbox" id="lh" checked> Ev sahibiyiz</label>
+        <div class="acts" style="align-items:center">Bizim gol: <button class="btn g s" data-a="lus" data-u="-1">−</button><b id="lusv">0</b><button class="btn g s" data-a="lus" data-u="1">+</button>
+          &nbsp; Rakip gol: <button class="btn g s" data-a="lth" data-u="-1">−</button><b id="lthv">0</b><button class="btn g s" data-a="lth" data-u="1">+</button></div>
+        <input class="f" id="lm" type="number" placeholder="Dakika">
+        <input class="f" id="ln" placeholder="Not (örn. İlk yarı, Gol!)">
+        <div class="acts"><button class="btn" id="liveOn">Yayını başlat / güncelle</button><button class="btn g" id="liveOff">Yayını kapat</button></div>
+        <div class="acts" style="align-items:center"><button class="btn g s" id="lcClear">Canlı sohbeti temizle</button><button class="btn g s" id="mvpReset">Maçın adamı oylamasını sıfırla</button><span class="meta" id="mvpInfo"></span></div>
+      </div>
+    </section>
     <section id="t-reports" class="hide"><div id="rl"></div></section>
     <section id="t-mods" class="hide">
       <div class="box" style="margin-top:12px">
@@ -157,6 +182,18 @@ dialog form{display:grid;gap:10px}
         <select class="f" id="ad"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7">7 gün</option></select>
         <div class="acts"><button class="btn" id="annSave">Yayınla</button><button class="btn g" id="annDel">Duyuruyu kaldır</button><button class="btn a" id="massWarn">⚠️ Herkese uyarı gönder</button></div>
       </div>
+    </section>
+    <section id="t-gh" class="hide">
+      <div class="box" style="margin-top:12px">
+        <b>📁 GitHub deposu (videolar ve dosyalar)</b>
+        <div class="meta" style="font-size:14px">Klasör: <span id="ghDir"></span><br>Buradaki videolar sitede <b>Videolar</b> sekmesinde görünür. Depo herkese açıktır: özel bilgi, şifre veya özel mesaj YÜKLEME.</div>
+        <input class="f" id="ghTok" type="password" placeholder="GitHub erişim anahtarı (fine-grained token)" autocomplete="off">
+        <button class="btn g s" id="ghSave" style="justify-self:start">Anahtarı bu cihaza kaydet</button>
+        <input class="f" id="ghFile" type="file" accept="video/*,image/*">
+        <button class="btn" id="ghUp" style="justify-self:start">Depoya yükle</button>
+        <div class="meta" id="ghMsg"></div>
+      </div>
+      <div id="ghl"></div>
     </section>
     <section id="t-log" class="hide"><div class="acts" style="margin-top:12px"><input class="f" id="gs" placeholder="Kayıtlarda ara" style="flex:1"><button class="btn g s" id="logCsv">CSV indir</button></div><div id="gl"></div></section>
   </main>
@@ -204,7 +241,7 @@ const csvOf = rows => "\ufeff" + rows.map(r => r.map(x => '"' + String(x ?? "").
 const dl = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1500); };
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
 let me = null, myName = "", started = false, banTarget = null;
-let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {};
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {}, matchesA = {}, liveA = {}, mvpA = {};
 const sel = new Set();
 const chatId = (a, b) => [a, b].sort().join("_");
 const can = p => role === "patron" || perms[p] === true;
@@ -260,9 +297,9 @@ function start() {
   w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
   w("bans", v => bans = v);
   if (role === "patron") { w("adminlog", v => logs = v); w("mods", v => mods = v); w("modrequests", v => modreq = v); }
-  w("reports", v => reports = v); w("presence", v => presence = v); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
+  w("reports", v => reports = v); w("presence", v => presence = v); w("matches", v => matchesA = v); w("live", v => liveA = v); w("mvp", v => mvpA = v); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
   onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
-  $("#modlink").value = location.origin + location.pathname + "?mod=1";
+  $("#modlink").value = location.origin + location.pathname + "?mod=1"; $("#ghDir").textContent = GH_DIR;
 }
 
 /* ---- Çizim ---- */
@@ -302,7 +339,7 @@ function render() {
   const pl = Object.entries(posts).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0))
     .filter(([, p]) => (!pq || nkey((p.text || "") + (p.author || "")).includes(pq)) && pfOk(p));
   $("#pl").innerHTML = pl.length ? pl.map(([id, p]) => `<div class="item">${can("del") ? `<input type="checkbox" class="pchk" data-id="${esc(id)}" ${sel.has(id) ? "checked" : ""} style="width:22px;height:22px;accent-color:var(--green)">` : ""}<div><b>${esc(p.author)}</b> <span class="meta">${fmt(p.createdAt)}</span>${p.edited ? " <span class=\"meta\">(düzenlendi)</span>" : ""}
-    <div class="txt">${esc(p.text)}</div>${p.videoUrl ? `<div class="meta">${p.mediaType === "image" ? "🖼️ foto" : "🎬 video"}: <a href="${esc(p.videoUrl)}" target="_blank" rel="noopener" style="color:var(--green)">aç</a></div>` : ""}</div>
+    <div class="txt">${esc(p.text)}</div>${p.mediaRef ? '<div class="meta">🖼️ fotoğraf</div>' : ""}${p.videoUrl ? `<div class="meta">${p.mediaType === "image" ? "🖼️ foto" : "🎬 video"}: <a href="${esc(p.videoUrl)}" target="_blank" rel="noopener" style="color:var(--green)">aç</a></div>` : ""}</div>
     <div class="acts"><button class="btn g s" data-a="pin" data-u="${esc(id)}">${settings.pinned === id ? "📌 Sabiti kaldır" : "📌 Sabitle"}</button>${can("del") ? `<button class="btn g s" data-a="pedit" data-u="${esc(id)}">Düzenle</button><button class="btn r s" data-a="dpost" data-u="${esc(id)}">Sil</button>` : ""}</div></div>`).join("") : '<div class="empty">Gönderi yok.</div>';
 
   const sl = Object.entries(stories).sort((a, b) => b[1].createdAt - a[1].createdAt);
@@ -335,6 +372,14 @@ function render() {
       ${role === "patron" ? `<div class="box"><b>🛡️ Ekip işlem sayısı</b>${li(tp(Object.entries(act), 8), ([n, c]) => `<div class="meta">${esc(n)} — ${c} işlem</div>`)}</div>` : ""}
     </div>
     <div class="box" style="margin-top:10px"><b>📦 Dışa aktar</b><div class="acts"><button class="btn g s" data-a="csv">👥 Kullanıcıları CSV indir</button>${role === "patron" ? '<button class="btn g s" data-a="backup">💾 Tüm veriyi yedekle (JSON)</button>' : ""}</div></div>`;
+  const mls = Object.entries(matchesA).sort((a, b) => b[1].at - a[1].at);
+  $("#ml2").innerHTML = mls.length ? mls.map(([id, m]) => `<div class="item"><div><b>${m.type === "antrenman" ? "🏋️ Antrenman" : (m.home ? "Orkide – " + esc(m.opp) : esc(m.opp) + " – Orkide")}</b> <span class="meta">${fmt(m.at)} · ${esc(m.place || "")}</span>${m.us != null ? `<div class="meta">Skor: ${m.home ? m.us + " - " + m.them : m.them + " - " + m.us}</div>` : ""}</div>
+    <div class="acts">${m.type !== "antrenman" ? `<button class="btn g s" data-a="mscore" data-u="${esc(id)}">Skor gir</button>` : ""}<button class="btn r s" data-a="mdel" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Fikstür boş.</div>';
+  $("#lusv").textContent = liveA.us || 0; $("#lthv").textContent = liveA.them || 0;
+  if (document.activeElement !== $("#lo")) $("#lo").value = liveA.opp || "";
+  if (document.activeElement !== $("#lm")) $("#lm").value = liveA.minute || "";
+  if (document.activeElement !== $("#ln")) $("#ln").value = liveA.note || "";
+  $("#mvpInfo").textContent = Object.keys(mvpA).length + " oy";
   const rqs = Object.entries(modreq);
   $("#rq").innerHTML = rqs.length ? rqs.map(([id, r]) => `<div class="item"><div><b>${esc(r.name)}</b> <span class="meta">${fmt(r.at)}</span><div class="meta">${esc(id)}</div></div>
     <div class="acts"><button class="btn s" data-a="mapprove" data-u="${esc(id)}">Onayla</button><button class="btn g s" data-a="mreject" data-u="${esc(id)}">Reddet</button></div></div>`).join("") : '<div class="empty">Bekleyen başvuru yok.</div>';
@@ -362,8 +407,9 @@ function render() {
 $("#us").oninput = $("#ps").oninput = render;
 $("#tabs").onclick = e => {
   const b = e.target.closest("[data-t]"); if (!b) return;
+  if (b.dataset.t === "gh") ghList();
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-  ["users", "an", "posts", "stories", "comments", "reports", "bans", "mods", "ann", "set", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["users", "an", "posts", "stories", "comments", "reports", "match", "bans", "mods", "ann", "set", "gh", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
 };
 
 /* ---- İşlemler ---- */
@@ -382,7 +428,7 @@ async function setBan(uid, type, days, reason) {
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b) return;
   const a = b.dataset.a, id = b.dataset.u, cid = b.dataset.c;
-  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject", "backup"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
+  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject", "backup", "ghdel"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
   if (["wipe", "dpost", "dstory", "dcom", "rdel"].includes(a) && !can("del")) return alert("Silme yetkin yok.");
   if (a === "ban" && !(can("mute") || can("ban"))) return alert("Yasaklama yetkin yok.");
   if (a === "warn" && !can("warn")) return alert("Uyarı gönderme yetkin yok.");
@@ -409,7 +455,7 @@ document.addEventListener("click", async e => {
       log("Hesap silindi", nm);
       alert("Hesap kapatıldı. Kullanıcı bir daha giriş yapamaz.\nGiriş kaydını tamamen kaldırmak istersen Firebase konsolu → Authentication → Users bölümünden de sil.");
     }
-    if (a === "dpost" && confirm("Gönderi silinsin mi?")) { await remove(dref(db, "posts/" + id)); await remove(dref(db, "comments/" + id)); log("Gönderi silindi", posts[id]?.author || id); }
+    if (a === "dpost" && confirm("Gönderi silinsin mi?")) { if (posts[id]?.mediaRef) remove(dref(db, "media/" + posts[id].mediaRef)).catch(() => {}); await remove(dref(db, "posts/" + id)); await remove(dref(db, "comments/" + id)); log("Gönderi silindi", posts[id]?.author || id); }
     if (a === "mkmod" || a === "mapprove") {
       const nm = a === "mapprove" ? (modreq[id]?.name || nameOf(id)) : nameOf(id);
       if (a === "mkmod" && !confirm(nm + " moderatör yapılsın mı?")) return;
@@ -433,9 +479,11 @@ document.addEventListener("click", async e => {
     if (a === "rok") { await remove(dref(db, "reports/" + id)); log("Şikayet kapatıldı", reports[id]?.author || id); }
     if (a === "info") {
       const u = known()[id] || {}, my = Object.values(posts).filter(p => p.uid === id), b = bans[id];
+      let em = "-";
+      if (role === "patron") { try { em = (await get(dref(db, "emails/" + id))).val() || "(yok: kullanıcı adıyla kayıt olmuş)"; } catch {} }
       const lk = my.reduce((n, p) => n + Object.keys(p.likes || {}).length, 0), last = my.reduce((m, p) => Math.max(m, p.createdAt || 0), 0);
       const st = live(b) ? (b.type === "mute" ? "Susturulmuş" : "Yasaklı") + " (" + left(b.until) + ")" : "Normal";
-      alert((u.name || "?") + "\nUID: " + id + "\nDurum: " + st + "\nÇevrimiçi: " + (presence[id] ? "evet" : "hayır") + "\nBio: " + (u.bio || "-") +
+      alert((u.name || "?") + "\nUID: " + id + "\nE-posta: " + em + "\nDurum: " + st + "\nÇevrimiçi: " + (presence[id] ? "evet" : "hayır") + "\nBio: " + (u.bio || "-") +
         "\nGönderi: " + my.length + " · Aldığı beğeni: " + lk + "\nSon gönderi: " + (last ? fmt(last) : "-") +
         "\nNot sayısı: " + Object.keys(notes[id] || {}).length + "\nAçık şikayet: " + Object.values(reports).filter(r => r.author === u.name).length);
     }
@@ -448,6 +496,18 @@ document.addEventListener("click", async e => {
       dl("kullanicilar.csv", csvOf([["Ad", "UID", "Gönderi", "Durum", "Çevrimiçi"], ...Object.entries(known()).map(([uid, u]) => [u.name || "", uid, cnt[uid] || 0, live(bans[uid]) ? (bans[uid].type === "mute" ? "Susturulmuş" : "Yasaklı") : "Normal", presence[uid] ? "evet" : "hayır"])]), "text/csv");
     }
     if (a === "backup") dl("orkide-yedek-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify({ exportedAt: Date.now(), users, posts, stories, comments, bans, settings, mods, reports, notes }, null, 2), "application/json");
+    if (a === "mscore") {
+      const v = prompt("Skor (bizim-rakip, örn. 2-1):"); if (!v) return;
+      const x = v.match(/^\s*(\d+)\s*[-:]\s*(\d+)\s*$/); if (!x) return alert("Örnek: 2-1");
+      await update(dref(db, "matches/" + id), { us: +x[1], them: +x[2] }); log("Maç skoru girildi " + x[1] + "-" + x[2], matchesA[id]?.opp || id);
+    }
+    if (a === "mdel" && confirm("Fikstürden silinsin mi?")) { await remove(dref(db, "matches/" + id)); log("Fikstür silindi", matchesA[id]?.opp || id); }
+    if (a === "lus" || a === "lth") { const k = a === "lus" ? "us" : "them"; await set(dref(db, "live/" + k), Math.max(0, (liveA[k] || 0) + (+id))); }
+    if (a === "ghdel" && confirm(id + " depodan silinsin mi?")) {
+      const r = await fetch(ghUrl(id), { method: "DELETE", headers: { ...ghH(), "Content-Type": "application/json" }, body: JSON.stringify({ message: "Silindi: " + id, sha: cid, branch: "main" }) });
+      if (!r.ok) throw new Error((await r.json()).message || r.status);
+      log("Depodan dosya silindi", id); ghList();
+    }
     if (a === "warn") {
       const WT = ["Lütfen kurallara uy; tekrarında hesabın yasaklanabilir.", "Spam / reklam paylaşımı yapma.", "Hakaret ve küfür içeren paylaşımlar yasaktır.", "Uygunsuz içerik paylaşma.", "Diğer kullanıcılara saygılı ol."];
       let t = prompt(nameOf(id) + " kullanıcısına uyarı.\nHazır mesaj için 1-5 yaz veya kendi mesajını yaz:\n" + WT.map((x, i) => (i + 1) + ") " + x).join("\n")); if (!t || !t.trim()) return;
@@ -533,6 +593,49 @@ $("#lock").onclick = async () => {
   await set(dref(db, "settings/maintenance"), on); log(on ? "ACİL: Site kilitlendi" : "Site kilidi açıldı", "site");
 };
 $("#logCsv").onclick = () => dl("kayit.csv", csvOf([["Tarih", "Kişi", "İşlem", "Hedef"], ...Object.values(logs).map(l => [fmt(l.at), l.by, l.action, l.target])]), "text/csv");
+const GH_REPO = "orkideaagra-sys/orkidespor-sitesi", GH_DIR = "VERİLER,VİDEOLAR.MESAJLKAR. OZEL BİLGİLER";
+const ghTok = () => { try { return localStorage.getItem("orkide_gh_token") || ""; } catch { return ""; } };
+const ghUrl = n => `https://api.github.com/repos/${GH_REPO}/contents/${GH_DIR.split("/").map(encodeURIComponent).join("/")}${n ? "/" + encodeURIComponent(n) : ""}`;
+const ghH = () => ({ Authorization: "Bearer " + ghTok(), Accept: "application/vnd.github+json" });
+async function ghList() {
+  try {
+    const r = await fetch(ghUrl(""), { headers: ghTok() ? ghH() : { Accept: "application/vnd.github+json" } });
+    if (!r.ok) { $("#ghl").innerHTML = '<div class="empty">Klasör okunamadı (' + r.status + '). Klasör adı doğru mu?</div>'; return; }
+    const l = (await r.json()).filter(f => f.type === "file");
+    $("#ghl").innerHTML = l.length ? l.map(f => `<div class="item"><div><b>${esc(f.name)}</b><div class="meta">${(f.size / 1048576).toFixed(1)} MB</div></div><div class="acts"><button class="btn r s" data-a="ghdel" data-u="${esc(f.name)}" data-c="${esc(f.sha)}">Sil</button></div></div>`).join("") : '<div class="empty">Klasörde dosya yok.</div>';
+  } catch (err) { $("#ghl").innerHTML = '<div class="empty">Bağlanılamadı: ' + esc(err.message) + '</div>'; }
+}
+$("#ghSave").onclick = () => {
+  try { localStorage.setItem("orkide_gh_token", $("#ghTok").value.trim()); } catch {}
+  $("#ghTok").value = ""; alert("Anahtar sadece bu cihazın tarayıcısına kaydedildi."); ghList();
+};
+$("#ghUp").onclick = async () => {
+  const f = $("#ghFile").files[0]; if (!f) return alert("Önce bir dosya seç.");
+  if (!ghTok()) return alert("Önce GitHub anahtarını kaydet.");
+  if (f.size > 90 * 1024 * 1024) return alert("Dosya en fazla 90 MB olabilir.");
+  $("#ghMsg").textContent = "Yükleniyor… (büyük videolar biraz sürer)";
+  try {
+    const b64 = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(",")[1]); fr.onerror = no; fr.readAsDataURL(f); });
+    let sha; const ex = await fetch(ghUrl(f.name), { headers: ghH() }); if (ex.ok) sha = (await ex.json()).sha;
+    const r = await fetch(ghUrl(f.name), { method: "PUT", headers: { ...ghH(), "Content-Type": "application/json" }, body: JSON.stringify({ message: "Yönetici yüklemesi: " + f.name, content: b64, branch: "main", ...(sha ? { sha } : {}) }) });
+    if (!r.ok) throw new Error((await r.json()).message || r.status);
+    $("#ghMsg").textContent = "Yüklendi ✓ Sitede görünmesi 1-2 dakika sürer."; log("Depoya dosya yüklendi", f.name); $("#ghFile").value = ""; ghList();
+  } catch (err) { $("#ghMsg").textContent = "Yüklenemedi: " + err.message; }
+};
+$("#mAdd").onclick = async () => {
+  const type = $("#mt").value, opp = $("#mo").value.trim(), at = new Date($("#mw").value).getTime();
+  if (isNaN(at)) return alert("Tarih ve saat seç."); if (type === "mac" && !opp) return alert("Rakip takımı yaz.");
+  try { await push(dref(db, "matches"), { type, opp, at, place: $("#mp").value.trim(), home: $("#mh").checked }); log("Fikstüre eklendi", opp || "Antrenman"); $("#mo").value = ""; $("#mp").value = ""; }
+  catch (err) { alert("Eklenemedi: " + (err.code || err.message)); }
+};
+$("#liveOn").onclick = async () => {
+  if (!$("#lo").value.trim()) return alert("Rakip takımı yaz.");
+  try { await update(dref(db, "live"), { on: true, opp: $("#lo").value.trim(), home: $("#lh").checked, minute: parseInt($("#lm").value, 10) || 0, note: $("#ln").value.trim(), us: liveA.us || 0, them: liveA.them || 0 }); log("Canlı yayın güncellendi", $("#lo").value.trim()); }
+  catch (err) { alert("Başarısız: " + (err.code || err.message)); }
+};
+$("#liveOff").onclick = async () => { await update(dref(db, "live"), { on: false, us: 0, them: 0 }); log("Canlı yayın kapatıldı", "-"); };
+$("#lcClear").onclick = async () => { if (confirm("Canlı sohbet temizlensin mi?")) { await remove(dref(db, "livechat")); log("Canlı sohbet temizlendi", "-"); } };
+$("#mvpReset").onclick = async () => { if (confirm("Maçın adamı oyları sıfırlansın mı?")) { try { await remove(dref(db, "mvp")); log("MVP oylaması sıfırlandı", "-"); } catch { alert("Sadece patron sıfırlayabilir."); } } };
 $("#annSave").onclick = async () => {
   const t = $("#at").value.trim(); if (!t) return alert("Duyuru metni yaz.");
   const d = parseInt($("#ad").value, 10);
