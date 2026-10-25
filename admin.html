@@ -88,6 +88,7 @@ dialog form{display:grid;gap:10px}
       <button class="btn g" data-t="stories">🎞️ Hikayeler</button>
       <button class="btn g" data-t="comments">💬 Yorumlar</button>
       <button class="btn g" data-t="match">⚽ Maçlar</button>
+      <button class="btn g" data-t="lig">🏆 Lig & İstatistik</button>
       <button class="btn g" data-t="reports">🚩 Şikayetler</button>
       <button class="btn g" data-t="bans">⛔ Yasaklar</button>
       <button class="btn g" data-t="mods" data-patron>🛡️ Moderatörler</button>
@@ -101,7 +102,7 @@ dialog form{display:grid;gap:10px}
       <input class="f" id="us" placeholder="Kullanıcı ara (ad veya UID)" style="margin-top:12px">
       <div class="acts" style="margin-top:8px">
         <select class="f" id="uf" style="width:auto"><option value="all">Hepsi</option><option value="online">🟢 Çevrimiçi</option><option value="banned">Yasaklı</option><option value="muted">Susturulmuş</option><option value="mods">Moderatörler</option><option value="noposts">Hiç paylaşmayan</option></select>
-        <select class="f" id="usort" style="width:auto"><option value="name">Ada göre</option><option value="posts">Gönderi sayısına göre</option><option value="online">Çevrimiçi önce</option></select>
+        <select class="f" id="usort" style="width:auto"><option value="name">Ada göre</option><option value="posts">Gönderi sayısına göre</option><option value="online">Çevrimiçi önce</option><option value="last">Son girişe göre</option></select>
       </div>
       <div id="ul"></div>
       <div class="box" style="margin-top:14px">
@@ -123,6 +124,14 @@ dialog form{display:grid;gap:10px}
     </section>
     <section id="t-stories" class="hide"><button class="btn g s" id="cleanSt" style="margin-top:12px">Süresi dolan hikayeleri temizle</button><div class="thumbs" id="sl"></div></section>
     <section id="t-comments" class="hide"><input class="f" id="cs" placeholder="Yorum veya kişi ara" style="margin-top:12px"><div id="cl"></div></section>
+    <section id="t-lig" class="hide">
+      <div class="box" style="margin-top:12px"><b>📊 Puan durumu</b>
+        <div class="acts"><input class="f" id="tn" placeholder="Takım adı (örn. Orkide)" style="flex:1"><button class="btn" id="tAdd">Takım ekle</button></div>
+        <div class="meta" style="font-size:13px">O: oynanan · G: galibiyet · B: beraberlik · M: mağlubiyet · AG: attığı gol · YG: yediği gol. Puan otomatik hesaplanır. Takımın adı "Orkide" ise sitede vurgulanır.</div>
+        <div id="tl"></div>
+      </div>
+      <div class="box" style="margin-top:12px"><b>🥇 Oyuncu istatistikleri</b><div id="pst"></div></div>
+    </section>
     <section id="t-match" class="hide">
       <div class="box" style="margin-top:12px">
         <b>📅 Fikstür / antrenman ekle</b>
@@ -241,7 +250,7 @@ const csvOf = rows => "\ufeff" + rows.map(r => r.map(x => '"' + String(x ?? "").
 const dl = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1500); };
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
 let me = null, myName = "", started = false, banTarget = null;
-let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {}, matchesA = {}, liveA = {}, mvpA = {};
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {}, matchesA = {}, liveA = {}, mvpA = {}, statsA = {}, tableA = {}, verifiedA = {}, playersA = [];
 const sel = new Set();
 const chatId = (a, b) => [a, b].sort().join("_");
 const can = p => role === "patron" || perms[p] === true;
@@ -297,7 +306,8 @@ function start() {
   w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
   w("bans", v => bans = v);
   if (role === "patron") { w("adminlog", v => logs = v); w("mods", v => mods = v); w("modrequests", v => modreq = v); }
-  w("reports", v => reports = v); w("presence", v => presence = v); w("matches", v => matchesA = v); w("live", v => liveA = v); w("mvp", v => mvpA = v); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
+  w("reports", v => reports = v); w("presence", v => presence = v); w("matches", v => matchesA = v); w("live", v => liveA = v); w("mvp", v => mvpA = v); w("stats", v => statsA = v); w("table", v => tableA = v); w("verified", v => verifiedA = v);
+  fetch("index.html").then(r => r.text()).then(x => { const b = (x.split("const PLAYERS = [")[1] || "").split("];")[0]; playersA = [...b.matchAll(/name: "([^"]+)"/g)].map(m => m[1]).filter(n => !/Adı$/.test(n)); render(); }).catch(() => {}); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
   onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
   $("#modlink").value = location.origin + location.pathname + "?mod=1"; $("#ghDir").textContent = GH_DIR;
 }
@@ -318,6 +328,7 @@ function render() {
       return f === "all" || (f === "online" && presence[id]) || (f === "banned" && live(b) && b.type !== "mute") || (f === "muted" && live(b) && b.type === "mute") || (f === "mods" && mods[id]) || (f === "noposts" && !cnt[id]); })
     .sort((a, b) => { const so = $("#usort").value;
       if (so === "posts") return (cnt[b[0]] || 0) - (cnt[a[0]] || 0);
+      if (so === "last") return (b[1].last || 0) - (a[1].last || 0);
       if (so === "online") return (presence[b[0]] ? 1 : 0) - (presence[a[0]] ? 1 : 0);
       return (a[1].name || "").localeCompare(b[1].name || "", "tr"); });
   $("#ul").innerHTML = ul.length ? ul.map(([id, u]) => {
@@ -330,8 +341,8 @@ function render() {
     acts.push(bt("g", "info", "ℹ️ Detay"));
     acts.push(bt("g", "note", "📝 Not (" + Object.keys(notes[id] || {}).length + ")"));
     if (can("del")) acts.push(bt("g", "wipe", "İçerikleri sil"));
-    if (role === "patron") { acts.push(bt("g", "mail", "Şifre e-postası")); acts.push(mods[id] ? bt("g", "rmmod", "Moderatörlüğü al") : bt("g", "mkmod", "🛡️ Moderatör yap")); acts.push(bt("r", "del", "Hesabı sil")); }
-    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${mods[id] ? '<span class="b mod">Moderatör</span>' : ""}${presence[id] ? '<span class="b mod" style="background:#3ddc97">çevrimiçi</span>' : ""}${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div><div class="acts">${acts.join("")}</div></div>`;
+    if (role === "patron") { acts.push(bt("g", "vfy", verifiedA[id] ? "Doğrulamayı kaldır" : "✅ Doğrula")); acts.push(bt("g", "mail", "Şifre e-postası")); acts.push(mods[id] ? bt("g", "rmmod", "Moderatörlüğü al") : bt("g", "mkmod", "🛡️ Moderatör yap")); acts.push(bt("r", "del", "Hesabı sil")); }
+    return `<div class="item"><div><b>${esc(u.name || "?")}</b>${verifiedA[id] ? " ✅" : ""}${mods[id] ? '<span class="b mod">Moderatör</span>' : ""}${presence[id] ? '<span class="b mod" style="background:#3ddc97">çevrimiçi</span>' : ""}${badge}<div class="meta">${esc(id)} · ${cnt[id] || 0} gönderi</div></div><div class="acts">${acts.join("")}</div></div>`;
   }).join("") : '<div class="empty">Kullanıcı yok. Kullanıcılar siteye girdikçe veya paylaşım yaptıkça burada görünür. Eksik birini aşağıdaki "Kişi ekle" ile elle ekleyebilirsin.</div>';
 
   const pq = nkey($("#ps").value);
@@ -372,6 +383,11 @@ function render() {
       ${role === "patron" ? `<div class="box"><b>🛡️ Ekip işlem sayısı</b>${li(tp(Object.entries(act), 8), ([n, c]) => `<div class="meta">${esc(n)} — ${c} işlem</div>`)}</div>` : ""}
     </div>
     <div class="box" style="margin-top:10px"><b>📦 Dışa aktar</b><div class="acts"><button class="btn g s" data-a="csv">👥 Kullanıcıları CSV indir</button>${role === "patron" ? '<button class="btn g s" data-a="backup">💾 Tüm veriyi yedekle (JSON)</button>' : ""}</div></div>`;
+  const tms = Object.entries(tableA).sort((a, b) => (a[1].name || "").localeCompare(b[1].name || "", "tr"));
+  const ni = (id, k, v) => `<input class="f" type="number" min="0" style="width:62px;min-height:36px;padding:4px 6px" data-tid="${esc(id)}" data-tk="${k}" value="${v || 0}">`;
+  $("#tl").innerHTML = tms.length ? tms.map(([id, x]) => `<div class="item"><div><b>${esc(x.name)}</b><div class="acts" style="margin-top:6px">${["o", "g", "b", "m", "ag", "yg"].map(k => `<label class="meta">${k.toUpperCase()} ${ni(id, k, x[k])}</label>`).join("")}</div></div><div class="acts"><button class="btn r s" data-a="tdel" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Takım eklenmedi.</div>';
+  const pb = (id, k, d) => `<button class="btn g s" data-a="pst" data-u="${esc(id)}" data-c="${k}:${d}">${d > 0 ? "+" : "−"}</button>`;
+  $("#pst").innerHTML = playersA.length ? playersA.map(n => { const id = nkey(n), st = statsA[id] || {}; return `<div class="item"><div><b>${esc(n)}</b></div><div class="acts" style="align-items:center">${[["mac", "🏟"], ["gol", "⚽"], ["asist", "🅰"], ["sari", "🟨"], ["kirmizi", "🟥"]].map(([k, ic]) => `${ic} ${pb(id, k, -1)}<b>${st[k] || 0}</b>${pb(id, k, 1)}`).join(" &nbsp; ")}</div></div>`; }).join("") : '<div class="empty">Oyuncu listesi okunamadı (index.html aynı klasörde olmalı).</div>';
   const mls = Object.entries(matchesA).sort((a, b) => b[1].at - a[1].at);
   $("#ml2").innerHTML = mls.length ? mls.map(([id, m]) => `<div class="item"><div><b>${m.type === "antrenman" ? "🏋️ Antrenman" : (m.home ? "Orkide – " + esc(m.opp) : esc(m.opp) + " – Orkide")}</b> <span class="meta">${fmt(m.at)} · ${esc(m.place || "")}</span>${m.us != null ? `<div class="meta">Skor: ${m.home ? m.us + " - " + m.them : m.them + " - " + m.us}</div>` : ""}</div>
     <div class="acts">${m.type !== "antrenman" ? `<button class="btn g s" data-a="mscore" data-u="${esc(id)}">Skor gir</button>` : ""}<button class="btn r s" data-a="mdel" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Fikstür boş.</div>';
@@ -409,7 +425,7 @@ $("#tabs").onclick = e => {
   const b = e.target.closest("[data-t]"); if (!b) return;
   if (b.dataset.t === "gh") ghList();
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-  ["users", "an", "posts", "stories", "comments", "reports", "match", "bans", "mods", "ann", "set", "gh", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["users", "an", "posts", "stories", "comments", "reports", "match", "lig", "bans", "mods", "ann", "set", "gh", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
 };
 
 /* ---- İşlemler ---- */
@@ -428,7 +444,7 @@ async function setBan(uid, type, days, reason) {
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-a]"); if (!b) return;
   const a = b.dataset.a, id = b.dataset.u, cid = b.dataset.c;
-  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject", "backup", "ghdel"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
+  if (["del", "mail", "mkmod", "rmmod", "mapprove", "mreject", "backup", "ghdel", "vfy"].includes(a) && role !== "patron") return alert("Bu işlem sadece patron içindir.");
   if (["wipe", "dpost", "dstory", "dcom", "rdel"].includes(a) && !can("del")) return alert("Silme yetkin yok.");
   if (a === "ban" && !(can("mute") || can("ban"))) return alert("Yasaklama yetkin yok.");
   if (a === "warn" && !can("warn")) return alert("Uyarı gönderme yetkin yok.");
@@ -483,7 +499,7 @@ document.addEventListener("click", async e => {
       if (role === "patron") { try { em = (await get(dref(db, "emails/" + id))).val() || "(yok: kullanıcı adıyla kayıt olmuş)"; } catch {} }
       const lk = my.reduce((n, p) => n + Object.keys(p.likes || {}).length, 0), last = my.reduce((m, p) => Math.max(m, p.createdAt || 0), 0);
       const st = live(b) ? (b.type === "mute" ? "Susturulmuş" : "Yasaklı") + " (" + left(b.until) + ")" : "Normal";
-      alert((u.name || "?") + "\nUID: " + id + "\nE-posta: " + em + "\nDurum: " + st + "\nÇevrimiçi: " + (presence[id] ? "evet" : "hayır") + "\nBio: " + (u.bio || "-") +
+      alert((u.name || "?") + "\nUID: " + id + "\nE-posta: " + em + "\nKayıt: " + (u.since ? fmt(u.since) : "-") + "\nSon giriş: " + (u.last ? fmt(u.last) : "-") + "\nGünlük seri: " + (u.streak || 0) + " (en iyi " + (u.best || 0) + ")" + "\nDurum: " + st + "\nÇevrimiçi: " + (presence[id] ? "evet" : "hayır") + "\nBio: " + (u.bio || "-") +
         "\nGönderi: " + my.length + " · Aldığı beğeni: " + lk + "\nSon gönderi: " + (last ? fmt(last) : "-") +
         "\nNot sayısı: " + Object.keys(notes[id] || {}).length + "\nAçık şikayet: " + Object.values(reports).filter(r => r.author === u.name).length);
     }
@@ -496,6 +512,9 @@ document.addEventListener("click", async e => {
       dl("kullanicilar.csv", csvOf([["Ad", "UID", "Gönderi", "Durum", "Çevrimiçi"], ...Object.entries(known()).map(([uid, u]) => [u.name || "", uid, cnt[uid] || 0, live(bans[uid]) ? (bans[uid].type === "mute" ? "Susturulmuş" : "Yasaklı") : "Normal", presence[uid] ? "evet" : "hayır"])]), "text/csv");
     }
     if (a === "backup") dl("orkide-yedek-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify({ exportedAt: Date.now(), users, posts, stories, comments, bans, settings, mods, reports, notes }, null, 2), "application/json");
+    if (a === "vfy") { if (verifiedA[id]) await remove(dref(db, "verified/" + id)); else await set(dref(db, "verified/" + id), true); log(verifiedA[id] ? "Doğrulama kaldırıldı" : "Hesap doğrulandı", nameOf(id)); }
+    if (a === "tdel" && confirm("Takım silinsin mi?")) { await remove(dref(db, "table/" + id)); log("Puan durumundan takım silindi", tableA[id]?.name || id); }
+    if (a === "pst") { const [k, d] = cid.split(":"); await set(dref(db, "stats/" + id + "/" + k), Math.max(0, ((statsA[id] || {})[k] || 0) + (+d))); }
     if (a === "mscore") {
       const v = prompt("Skor (bizim-rakip, örn. 2-1):"); if (!v) return;
       const x = v.match(/^\s*(\d+)\s*[-:]\s*(\d+)\s*$/); if (!x) return alert("Örnek: 2-1");
@@ -622,6 +641,16 @@ $("#ghUp").onclick = async () => {
     $("#ghMsg").textContent = "Yüklendi ✓ Sitede görünmesi 1-2 dakika sürer."; log("Depoya dosya yüklendi", f.name); $("#ghFile").value = ""; ghList();
   } catch (err) { $("#ghMsg").textContent = "Yüklenemedi: " + err.message; }
 };
+$("#tAdd").onclick = async () => {
+  const n = $("#tn").value.trim(); if (!n) return alert("Takım adını yaz.");
+  try { await push(dref(db, "table"), { name: n, o: 0, g: 0, b: 0, m: 0, ag: 0, yg: 0 }); log("Puan durumuna takım eklendi", n); $("#tn").value = ""; }
+  catch (err) { alert("Eklenemedi: " + (err.code || err.message)); }
+};
+document.addEventListener("change", async e => {
+  const c = e.target.closest("[data-tid]"); if (!c) return;
+  try { await set(dref(db, "table/" + c.dataset.tid + "/" + c.dataset.tk), Math.max(0, parseInt(c.value, 10) || 0)); }
+  catch (err) { alert("Kaydedilemedi: " + (err.code || err.message)); }
+});
 $("#mAdd").onclick = async () => {
   const type = $("#mt").value, opp = $("#mo").value.trim(), at = new Date($("#mw").value).getTime();
   if (isNaN(at)) return alert("Tarih ve saat seç."); if (type === "mac" && !opp) return alert("Rakip takımı yaz.");
