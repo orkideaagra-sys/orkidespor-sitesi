@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Orkide · Spor İletişim</title>
 <meta name="google-site-verification" content="zMNZDjifhIesob_o8TNpFi7V8YJ4-JWkOGSn_xl_65E" />
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#06161f">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("orkide_theme")||"dark"}catch(e){}</script>
 <style>
@@ -109,7 +112,7 @@ aside{display:none}main{border:0}
 #sclose{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;z-index:2;background:rgba(0,0,0,.5);border:0;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer}
 .av{position:relative}.dot{position:absolute;right:-1px;bottom:-1px;width:13px;height:13px;border-radius:50%;background:#42565e;border:2px solid var(--bg)}.dot.on{background:#3ddc97}
 #ann{padding:12px 18px;background:linear-gradient(90deg,var(--blue),var(--green2));font-weight:600}
-#maint,#warn{position:fixed;inset:0;z-index:60;background:rgba(3,12,18,.94);display:grid;place-items:center;padding:16px}
+#maint,#warn,#pmodal{position:fixed;inset:0;z-index:60;background:rgba(3,12,18,.94);display:grid;place-items:center;padding:16px}
 .btn.s{padding:4px 12px;min-height:34px;font-size:14px}.btn.rec{background:var(--red);color:#fff}
 .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:18px}
 .vgrid video{width:100%;aspect-ratio:16/9;border-radius:14px;background:#000}
@@ -131,6 +134,13 @@ aside{display:none}main{border:0}
 .nt{display:flex;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line)}.nt.un{background:rgba(34,185,138,.10)}
 .tb{width:100%;border-collapse:collapse;font-size:14px}.tb th,.tb td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line)}.tb td:nth-child(2),.tb th:nth-child(2){text-align:left}.tb tr.me td{color:var(--green);font-weight:700}
 .pr input{width:58px;display:inline-block;min-height:34px;padding:2px 6px}
+.sbar{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:0;right:0;display:flex;justify-content:center;gap:8px;z-index:3;flex-wrap:wrap}
+.sbar button{background:rgba(0,0,0,.55);border:0;border-radius:999px;font-size:26px;padding:6px 10px;cursor:pointer}.sbar span{color:#fff;background:rgba(0,0,0,.55);padding:6px 14px;border-radius:999px}
+.emo{display:flex;gap:2px;flex-wrap:wrap}.emo button{background:none;border:0;font-size:22px;cursor:pointer;padding:2px 4px}
+#offline{position:fixed;top:0;left:0;right:0;z-index:80;background:var(--red);color:#fff;text-align:center;padding:6px;font-weight:700}
+.fall{position:fixed;top:-30px;font-size:26px;z-index:90;pointer-events:none;animation:fall 2.4s linear forwards}
+@keyframes fall{to{transform:translateY(112vh) rotate(540deg);opacity:.85}}
+.pl{cursor:pointer}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style>
 </head>
@@ -149,7 +159,7 @@ aside{display:none}main{border:0}
     <button class="btn" id="authBtn">Giriş yap</button>
     <button class="btn ghost" type="button" id="toggle">Hesabın yok mu? Kayıt ol</button>
     <button class="btn ghost" type="button" id="google">Google ile devam et</button>
-    <button class="btn ghost" type="button" id="guest">Hesapsız devam et (misafir)</button>
+    <button class="btn ghost" type="button" id="guest">Hesapsız devam etme kapatıldı.</button>
     <button class="btn ghost hide" type="button" id="forgot">Şifremi unuttum</button>
     <div class="credit">HamzaStudios tarafından yapılmıştır</div>
   </form>
@@ -174,18 +184,21 @@ aside{display:none}main{border:0}
       <div class="top">Ana Sayfa</div>
       <div id="ann" class="hide"></div>
       <div id="nextMatch" class="hide"></div>
+      <div id="weekBest" class="hide" style="padding:10px 18px;border-bottom:1px solid var(--line);cursor:pointer"></div>
       <div id="stories" class="stories"></div>
       <div class="compose hide" id="guestNote"><div class="meta" style="flex:1">Misafir olarak giriş yaptın, gönderileri okuyabilirsin. Paylaşım yapmak için hesap oluştur.</div><button class="btn" id="guestOut">Hesap oluştur</button></div>
       <div class="compose" id="composeBox">
         <div class="av" id="cAv"></div>
         <div style="flex:1">
           <textarea id="text" maxlength="280" placeholder="Sporda neler oluyor?"></textarea>
+          <div class="emo" id="emoBar"><button type="button">⚽</button><button type="button">🔥</button><button type="button">👏</button><button type="button">😂</button><button type="button">❤️</button><button type="button">💪</button><button type="button">🏆</button><button type="button">🙌</button></div>
           <video id="prev" controls class="hide" style="margin-top:8px"></video>
           <img id="prevImg" class="hide" alt="" style="margin-top:8px;border-radius:16px;max-width:100%">
           <div id="pollChip" class="hide meta" style="margin-top:8px"></div>
           <div class="row">
             <label class="file">📷 Foto / Video<input type="file" id="vfile" accept="image/*,video/*" hidden></label>
             <button type="button" class="btn ghost s" id="pollBtn">📊 Anket</button>
+            <select class="f" id="cat" style="width:auto;min-height:38px;padding:4px 10px"><option value="">Kategori</option><option>Maç</option><option>Antrenman</option><option>Duyuru</option><option>Eğlence</option></select>
             <input type="url" id="vurl" placeholder="veya video / YouTube bağlantısı">
             <span class="meta" id="cnt">0/280</span>
             <button class="btn" id="send">Gönder</button>
@@ -193,6 +206,7 @@ aside{display:none}main{border:0}
           <div class="err" id="perr"></div>
         </div>
       </div>
+      <div id="catBar" class="acts" style="padding:8px 18px;gap:6px"><button class="btn s" data-cat="">Hepsi</button><button class="btn ghost s" data-cat="Maç">Maç</button><button class="btn ghost s" data-cat="Antrenman">Antrenman</button><button class="btn ghost s" data-cat="Duyuru">Duyuru</button><button class="btn ghost s" data-cat="Eğlence">Eğlence</button></div>
       <div id="filterBar" class="hide"><span id="filterText"></span><button class="btn ghost" id="filterClear">✕ Temizle</button></div>
       <div id="feed"><div class="empty">Yükleniyor…</div></div>
     </section>
@@ -214,10 +228,12 @@ aside{display:none}main{border:0}
       <div id="tableBox" style="padding:6px 12px"></div>
       <div class="top" style="position:static">🥇 Gol krallığı</div>
       <div id="scorers"></div>
+      <div class="top" style="position:static">🏅 Ödüller</div>
+      <div id="awardBox"></div>
       <div class="top" style="position:static">⭐ Maçın adamı oylaması</div>
       <div class="players" id="plist"></div>
     </section>
-    <section id="notifs" class="hide"><div class="top">Bildirimler</div><div class="acts" style="padding:10px 18px"><button class="btn ghost s" id="nclear">Hepsini temizle</button></div><div id="nlist"></div></section>
+    <section id="notifs" class="hide"><div class="top">Bildirimler</div><div class="acts" style="padding:10px 18px"><button class="btn ghost s" id="nperm">🔔 Tarayıcı bildirimi aç</button><button class="btn ghost s" id="nclear">Hepsini temizle</button></div><div id="nlist"></div></section>
 
     <section id="videos" class="hide"><div class="top">Videolar</div><div class="vgrid" id="vgrid"></div></section>
 
@@ -251,6 +267,8 @@ aside{display:none}main{border:0}
         <div><b style="font-size:22px" id="pName"></b><div class="meta" id="pcount"></div><div id="badges" style="margin-top:6px"></div></div>
         <textarea id="bio" maxlength="160" placeholder="Kendini kısaca tanıt (en fazla 160 karakter)"></textarea>
         <div class="row" style="margin:0"><button class="btn" id="saveBio">Kaydet</button><span class="meta" id="bioMsg"></span></div>
+        <div class="row" style="margin:0"><span class="meta">Yazı boyutu</span><button class="btn ghost s" data-fs="-1">A−</button><button class="btn ghost s" data-fs="1">A+</button></div>
+        <button class="btn ghost s hide" id="install" style="justify-self:start">📲 Uygulamayı yükle</button>
       </div>
       <div id="myfeed"></div>
       <div class="top" style="position:static">🔖 Kaydedilenler</div>
@@ -266,6 +284,8 @@ aside{display:none}main{border:0}
   </div>
 </div>
 
+<div id="offline" class="hide">⚠️ İnternet bağlantısı yok</div>
+<div id="pmodal" class="hide"><div class="box" id="pbox" style="text-align:center"></div></div>
 <div id="maint" class="hide"><div class="box"><h2>🛠️ Bakım</h2><p id="maintMsg"></p></div></div>
 <div id="warn" class="hide"><div class="box"><h2>⚠️ Yönetici uyarısı</h2><div id="warnText"></div><button class="btn" id="warnOk">Anladım</button></div></div>
 <div id="sview" class="hide"><button id="sclose">✕</button><div id="sbody"></div></div>
@@ -519,11 +539,11 @@ $("#send").onclick = async () => {
     }
     const pr = await push(dref(db, "posts"), {
       uid: me.uid, author: nameOf(me),
-      text, videoUrl, mediaRef, poll: pendingPoll || null, mediaType: file ? (file.type.startsWith("image") ? "image" : "video") : (vurl ? (IMG_EXT.test(vurl.split("?")[0]) ? "image" : "video") : ""), createdAt: serverTimestamp()
+      text, videoUrl, mediaRef, poll: pendingPoll || null, cat: $("#cat").value, mediaType: file ? (file.type.startsWith("image") ? "image" : "video") : (vurl ? (IMG_EXT.test(vurl.split("?")[0]) ? "image" : "video") : ""), createdAt: serverTimestamp()
     });
     notifyMentions(text, pr.key);
     if (file && file.type.startsWith("video")) alert("Videon yüklendi. GitHub'ın yayına alması 1-2 dakika sürer, o zamana kadar oynatılamayabilir.");
-    try { localStorage.setItem("orkide_last_post", String(Date.now())); } catch {}
+    try { localStorage.setItem("orkide_last_post", String(Date.now())); localStorage.removeItem("orkide_draft"); } catch {}
     $("#text").value = ""; $("#vurl").value = ""; $("#vfile").value = ""; file = null;
     $("#prev").classList.add("hide"); $("#prevImg").classList.add("hide"); pendingPoll = null; $("#pollChip").classList.add("hide"); $("#cnt").textContent = "0/280";
   } catch (e) { $("#perr").textContent = "Gönderilemedi: " + (e.code || e.message); }
@@ -539,19 +559,19 @@ const mediaHTML = (p, id) => p.mediaType === "image" ? `<div class="media" data-
 const linkTags = h => h.replace(/(^|\s)#([\p{L}_][\p{L}\p{N}_]*)/gu, '$1<a href="#" data-tag="$2">#$2</a>').replace(/(^|\s)@([\p{L}_][\p{L}\p{N}_]*)/gu, '$1<a href="#" data-author="$2">@$2</a>');
 const postHTML = d => {
   const p = d.data(), liked = (p.likes || []).includes(me.uid), open = openSet.has(d.id);
-  return `<article class="post"><div class="av">${esc((p.author || "?")[0].toUpperCase())}</div>
-    <div class="pb"><div class="meta"><b data-author="${esc(p.author)}" style="cursor:pointer">${esc(p.author)}</b>${verifiedMap[p.uid] ? " ✅" : ""} · ${ago(p.createdAt)}${p.edited ? " · düzenlendi" : ""}${settings.pinned === d.id ? " · 📌 Sabit" : ""}</div>
+  return `<article class="post" id="post-${d.id}" data-pid="${d.id}" data-puid="${esc(p.uid)}"><div class="av">${esc((p.author || "?")[0].toUpperCase())}</div>
+    <div class="pb"><div class="meta"><b data-author="${esc(p.author)}" style="cursor:pointer">${esc(p.author)}</b>${verifiedMap[p.uid] ? " ✅" : ""} · ${ago(p.createdAt)}${p.edited ? " · düzenlendi" : ""}${p.cat ? ` <span class="b mod" style="background:var(--panel2);color:var(--text);margin:0">${esc(p.cat)}</span>` : ""}${settings.pinned === d.id ? " · 📌 Sabit" : ""}</div>
     ${p.text ? `<div class="txt">${linkTags(esc(p.text))}</div>` : ""}${mediaHTML(p, d.id)}${p.poll ? pollHTML(p, d.id) : ""}
     <div class="act"><button data-cbtn="${d.id}">💬 ${p.commentsCount || 0}</button>
     <button data-share="${d.id}">📤</button>
     ${!isGuest && p.uid !== me.uid ? `<button data-rep="${d.id}">🚩</button><button data-blk="${esc(p.uid)}">⛔</button>` : ""}
     <button class="${liked ? "liked" : ""}" data-like="${d.id}" data-on="${liked}">${liked ? "♥" : "♡"} ${(p.likes || []).length}</button>
-    ${isGuest ? "" : `<button data-react="${d.id}">😊</button><button data-save="${d.id}">${mySaved[d.id] ? "📑" : "🔖"}</button>`}<small class="meta">${reactSum(p)}</small>
+    ${isGuest ? "" : `<button data-react="${d.id}">😊</button><button data-save="${d.id}">${mySaved[d.id] ? "📑" : "🔖"}</button>`}<small class="meta">${reactSum(p)}</small><small class="meta">👁 ${p.views || 0}</small>
     ${p.uid === me.uid ? `<button data-edit="${d.id}">✏️</button><button class="del" data-del="${d.id}">Sil</button>` : ""}</div>
     <div class="cms ${open ? "" : "hide"}" data-cm="${d.id}">${open ? cmHTML(d.id) : ""}</div></div></article>`;
 };
 function renderFeeds() {
-  const ok = d => { const p = d.data(); if (myBlocks[p.uid]) return false; return !term || (p.text || "").toLowerCase().includes(term) || (p.author || "").toLowerCase().includes(term); };
+  const ok = d => { const p = d.data(); if (myBlocks[p.uid]) return false; if (catFilter && p.cat !== catFilter) return false; return !term || (p.text || "").toLowerCase().includes(term) || (p.author || "").toLowerCase().includes(term); };
   const f = allDocs.filter(ok).sort((x, y) => (y.id === settings.pinned) - (x.id === settings.pinned)), mine = allDocs.filter(d => d.data().uid === me.uid);
   $("#feed").innerHTML = f.length ? f.map(postHTML).join("") : `<div class="empty">${term ? "Aramayla eşleşen gönderi yok." : "Henüz gönderi yok. İlk gönderiyi sen paylaş."}</div>`;
   $("#myfeed").innerHTML = mine.length ? mine.map(postHTML).join("") : '<div class="empty">Henüz gönderin yok.</div>';
@@ -560,7 +580,7 @@ function renderFeeds() {
   $("#pcount").textContent = mine.length + " gönderi";
   $("#findFeed").innerHTML = term ? (f.length ? f.map(postHTML).join("") : '<div class="empty">Eşleşen gönderi yok.</div>') : '<div class="empty">Aramak için bir şey yaz.</div>';
   $("#filterBar").classList.toggle("hide", !term); $("#filterText").textContent = "Filtre: " + term;
-  hydrate(); renderPeople();
+  hydrate(); renderPeople(); renderWeek(); openHash();
   const cnt = {};
   allDocs.forEach(d => ((d.data().text || "").match(/(?:^|\s)#[\p{L}_][\p{L}\p{N}_]*/gu) || []).forEach(t => { t = t.trim().toLowerCase(); cnt[t] = (cnt[t] || 0) + 1; }));
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -611,7 +631,7 @@ $("#saveBio").onclick = async () => {
 
 /* ---------- Oyuncular ---------- */
 let photoFiles = [], photosLoaded = false;
-const playerCard = (p, file, i) => `<div class="pl">
+const playerCard = (p, file, i) => `<div class="pl" ${i === undefined ? "" : `data-pi="${i}"`}>
   ${file ? `<img class="av" src="${esc(fileUrl(PHOTO_DIR, file))}" alt="${esc(p.name)}" style="object-fit:cover" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'av',textContent:(this.alt||'?')[0].toUpperCase()}))">` : `<div class="av">${esc((p.name || "?")[0].toUpperCase())}</div>`}
   <b>${esc(p.name)}</b><small>${esc(p.position || "")}</small><small>${esc(p.team || "")}</small>${p.number ? `<div class="num">#${esc(p.number)}</div>` : ""}${statLine(p)}${i === undefined ? "" : (isGuest ? `<div class="meta">⭐ ${Object.values(mvpData).filter(x => x === i).length}</div>` : `<button class="btn ${me && mvpData[me.uid] === i ? "" : "ghost"} s" data-mvp="${i}" style="margin-top:6px">⭐ ${Object.values(mvpData).filter(x => x === i).length}</button>`)}</div>`;
 function renderPlayers() {
@@ -700,7 +720,8 @@ function showStory() {
   clearTimeout(sv.t); const x = sv.list[sv.i];
   if (!x) { $("#sview").classList.add("hide"); $("#sbody").innerHTML = ""; return; }
   $("#sview").classList.remove("hide");
-  $("#sbody").innerHTML = (x.type === "image" ? `<img ${x.mediaRef ? `data-mref="${esc(x.mediaRef)}"` : `src="${esc(x.url)}"`} alt="">` : `<video src="${esc(x.url)}" autoplay playsinline></video>`) + `<div class="sname">${esc(x.author)} · ${ago(x.createdAt)}</div>`;
+  $("#sbody").innerHTML = (x.type === "image" ? `<img ${x.mediaRef ? `data-mref="${esc(x.mediaRef)}"` : `src="${esc(x.url)}"`} alt="">` : `<video src="${esc(x.url)}" autoplay playsinline></video>`) + `<div class="sname">${esc(x.author)} · ${ago(x.createdAt)}</div>` + storyBar(x);
+  afterStory(x);
   const sim = $("#sbody img"); if (sim) loadImg(sim);
   if (x.type === "image") sv.t = setTimeout(() => { sv.i++; showStory(); }, 5000);
   else $("#sbody video").onended = () => { sv.i++; showStory(); };
@@ -711,6 +732,9 @@ $("#stories").onclick = e => {
   sv = { list: stories.filter(x => x.uid === k.dataset.story), i: 0, t: null }; showStory();
 };
 $("#sview").onclick = e => {
+  const sr = e.target.closest("[data-sr]");
+  if (sr) { const s0 = sv.list[sv.i]; set(dref(db, `storyreacts/${s0.id}/${me.uid}`), sr.dataset.sr).catch(() => {}); notify(s0.uid, "react", "hikayene " + sr.dataset.sr + " bıraktı"); return; }
+  if (e.target.closest(".sbar")) return;
   if (e.target.closest("#sclose")) { sv.i = 99; return showStory(); }
   sv.i = Math.max(0, sv.i + (e.clientX < innerWidth / 3 ? -1 : 1)); showStory();
 };
@@ -737,7 +761,7 @@ document.addEventListener("click", e => {
   const sh = e.target.closest("[data-share]");
   if (sh) {
     const d = allDocs.find(x => x.id === sh.dataset.share); if (!d) return;
-    const p = d.data(), url = location.href.split("#")[0], text = `${p.author}: ${p.text || ""}`.trim();
+    const p = d.data(), url = location.href.split("#")[0] + "#p=" + d.id, text = `${p.author}: ${p.text || ""}`.trim();
     if (navigator.share) navigator.share({ title: "Orkide", text, url }).catch(() => {});
     else navigator.clipboard?.writeText(text + " " + url).then(() => alert("Kopyalandı"));
   }
@@ -818,7 +842,8 @@ const loadImg = im => {
   (mcache[k] ||= get(dref(db, "media/" + k)).then(s => s.val()?.data || "")).then(d => { im.src = d; }).catch(() => {});
 };
 const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { io.unobserve(en.target); loadImg(en.target); } }), { rootMargin: "400px" });
-function hydrate() { document.querySelectorAll("img[data-mref]:not([src]):not([data-obs])").forEach(im => { im.dataset.obs = "1"; io.observe(im); }); }
+function hydrate() { document.querySelectorAll("img[data-mref]:not([src]):not([data-obs])").forEach(im => { im.dataset.obs = "1"; io.observe(im); });
+  document.querySelectorAll("article.post[data-pid]:not([data-vo])").forEach(a => { a.dataset.vo = "1"; vio.observe(a); }); }
 
 function renderPeople() {
   const el = $("#findPeople"); if (!el || !me) return;
@@ -903,6 +928,7 @@ function listenExtras() {
   w("live", v => { liveData = v; renderLive(); });
   w("mvp", v => { mvpData = v; renderPlayers(); });
   w("stats", v => { statsData = v; renderPlayers(); });
+  w("awards", v => { awardsData = v; renderAwards(); });
   w("table", v => { tableData = v; renderTable(); });
   w("verified", v => { verifiedMap = v; renderFeeds(); });
   w("predictions", v => { predData = v; renderFix(); });
@@ -938,7 +964,7 @@ function renderFix() {
   const up = l.filter(m => m.at >= lim), past = l.filter(m => m.at < lim).reverse();
   const row = m => `<div class="fx" data-mid="${m.id}"><div class="d">${new Date(m.at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}<br><small>${new Date(m.at).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</small></div>
     <div style="flex:1"><b>${m.type === "antrenman" ? "🏋️ Antrenman" : vs(m)}</b><div class="meta">${esc(m.place || "")}</div></div>
-    ${m.us != null && m.them != null ? `<b style="font-size:20px">${m.home ? m.us + " - " + m.them : m.them + " - " + m.us}</b>` : ""}</div>`;
+    ${m.us != null && m.them != null ? `<b style="font-size:20px">${m.home ? m.us + " - " + m.them : m.them + " - " + m.us}</b>` : ""}${m.at > Date.now() ? `<button class="btn ghost s" data-ics="${m.id}" title="Takvime ekle">📅</button>` : ""}</div>`;
   $("#fixBox").innerHTML = (up.length ? up.map(row).join("") : '<div class="empty">Yaklaşan maç yok.</div>') + (past.length ? '<div class="meta" style="padding:8px 18px">Geçmiş</div>' + past.slice(0, 6).map(row).join("") : "");
   renderNext();
 }
@@ -951,10 +977,13 @@ function renderNext() {
 setInterval(() => { if (me) renderNext(); }, 30000);
 function renderLive() {
   const L = liveData, el = $("#liveBox"), b = $("#nextMatch"), us = L.us || 0, th = L.them || 0;
+  if (L.on && prevLive === false && "Notification" in window && Notification.permission === "granted") new Notification("🔴 Maç başladı!", { body: TEAM + " – " + (L.opp || "") + " canlı yayında" });
+  if (prevUs !== null && us > prevUs) goalFx();
+  prevLive = !!L.on; prevUs = L.on ? us : null;
   el.classList.toggle("hide", !L.on); $("#chatBox").classList.toggle("hide", !L.on); $("#lcForm").classList.toggle("hide", isGuest);
   if (L.on) {
     const sc = L.home ? TEAM + " " + us + " - " + th + " " + esc(L.opp) : esc(L.opp) + " " + th + " - " + us + " " + TEAM;
-    el.innerHTML = `<div class="live"><span style="color:#ff6b81;font-weight:800">🔴 CANLI</span> <span class="meta">${L.minute ? esc(L.minute) + "'" : ""} ${esc(L.note || "")}</span><div><b class="sc">${sc}</b></div></div>`;
+    el.innerHTML = `<div class="live"><span style="color:#ff6b81;font-weight:800">🔴 CANLI</span> <span class="meta">${L.minute ? esc(L.minute) + "'" : ""} ${esc(L.note || "")}</span><div><b class="sc">${sc}</b></div>${isGuest ? "" : `<button class="btn s" data-cheer style="margin-top:8px">📣 Tezahürat <b>${L.cheers || 0}</b></button>`}</div>`;
     b.classList.remove("hide"); b.innerHTML = "🔴 CANLI: " + sc + " · Takım sekmesinde canlı sohbet";
   } else renderNext();
 }
@@ -1084,6 +1113,85 @@ document.addEventListener("click", e => {
     set(dref(db, `predictions/${pd.dataset.pred}/${me.uid}`), { us: +a, them: +c }).then(() => alert("Tahminin kaydedildi.")).catch(() => alert("Maç başlamış olabilir, tahmin kaydedilemedi."));
   }
 });
+
+/* ---------- Yeni özellikler: hikaye tepkisi, oyuncu kartı, haftanın gönderisi, ödüller, kategori, bağlantı, PWA... ---------- */
+let awardsData = {}, catFilter = "", prevLive = null, prevUs = null, lastCheer = 0, hashDone = "", dip = null;
+const seenPosts = new Set(), pendV = {};
+const vio = new IntersectionObserver(es => es.forEach(en => {
+  if (!en.isIntersecting) return; const a = en.target, id = a.dataset.pid; vio.unobserve(a);
+  if (isGuest || !me || a.dataset.puid === me.uid || seenPosts.has(id)) return; seenPosts.add(id); pendV[id] = (pendV[id] || 0) + 1;
+}), { threshold: 0.6 });
+setInterval(() => { for (const id in pendV) { const n = pendV[id]; delete pendV[id]; runTransaction(dref(db, `posts/${id}/views`), v => (v || 0) + n).catch(() => {}); } }, 30000);
+
+const storyBar = x => isGuest ? "" : (x.uid === me.uid ? '<div class="sbar"><span id="sviews">👁 …</span></div>' : '<div class="sbar">' + EMO.map(em => `<button data-sr="${em}">${em}</button>`).join("") + "</div>");
+function afterStory(x) {
+  if (isGuest) return;
+  if (x.uid !== me.uid) { set(dref(db, `storyviews/${x.id}/${me.uid}`), true).catch(() => {}); return; }
+  Promise.all([get(dref(db, "storyviews/" + x.id)), get(dref(db, "storyreacts/" + x.id))]).then(([v, r]) => {
+    const c = {}; Object.values(r.val() || {}).forEach(e => c[e] = (c[e] || 0) + 1);
+    const el = $("#sviews"); if (el) el.textContent = "👁 " + Object.keys(v.val() || {}).length + (Object.keys(c).length ? "   " + Object.entries(c).map(([e, n]) => e + n).join(" ") : "");
+  }).catch(() => {});
+}
+
+function photoOf(p) {
+  const pf = p.photo && (photoFiles.find(x => x === p.photo) || photoFiles.find(x => noExt(x).toLowerCase() === p.photo.toLowerCase()) || (IMG_EXT.test(p.photo) ? p.photo : null));
+  return pf || photoFiles.find(x => nkey(noExt(x)) === nkey(p.name));
+}
+function openPlayer(i) {
+  const p = PLAYERS[i], f = photoOf(p), s = statsData[nkey(p.name)] || {}, mv = Object.values(mvpData).filter(x => x === i).length;
+  const aw = Object.values(awardsData).filter(a => nkey(a.player || "") === nkey(p.name));
+  $("#pbox").innerHTML = (f ? `<img src="${esc(fileUrl(PHOTO_DIR, f))}" alt="" style="width:130px;height:130px;border-radius:50%;object-fit:cover;margin:0 auto">` : `<div class="av" style="width:100px;height:100px;font-size:40px;margin:0 auto">${esc(p.name[0])}</div>`)
+    + `<h2>${esc(p.name)}</h2><div class="meta">${p.number ? "#" + esc(p.number) + " · " : ""}${esc(p.position || "")}</div>`
+    + `<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;font-size:18px"><span>🏟 ${s.mac || 0}</span><span>⚽ ${s.gol || 0}</span><span>🅰 ${s.asist || 0}</span><span>🟨 ${s.sari || 0}</span><span>🟥 ${s.kirmizi || 0}</span></div>`
+    + `<div>⭐ ${mv} MVP oyu</div>` + (aw.length ? `<div>${aw.map(a => "🏅 " + esc(a.title) + " (" + esc(a.month || "") + ")").join("<br>")}</div>` : "") + '<button class="btn" id="pclose">Kapat</button>';
+  $("#pmodal").classList.remove("hide");
+}
+function renderAwards() {
+  const l = Object.values(awardsData).sort((a, b) => (b.at || 0) - (a.at || 0));
+  $("#awardBox").innerHTML = l.length ? l.map(a => `<div class="fx"><div class="d">🏅</div><div style="flex:1"><b>${esc(a.title)}</b><div class="meta">${esc(a.month || "")}</div></div><b>${esc(a.player)}</b></div>`).join("") : '<div class="empty">Henüz ödül verilmedi.</div>';
+}
+function renderWeek() {
+  const el = $("#weekBest"); if (!el || !me) return;
+  const cut = Date.now() - 7 * 864e5, best = allDocs.filter(d => (d.data().createdAt || 0) > cut && !myBlocks[d.data().uid]).sort((a, b) => b.data().likes.length - a.data().likes.length)[0];
+  if (!best || best.data().likes.length < 1) { el.classList.add("hide"); return; }
+  const p = best.data(); el.classList.remove("hide"); el.dataset.goto = best.id;
+  el.innerHTML = `🏆 <b>Haftanın gönderisi</b> — ${esc(p.author)}: ${esc((p.text || "[medya]").slice(0, 60))} <span class="meta">(${p.likes.length} ❤)</span>`;
+}
+function openHash() {
+  const m = location.hash.match(/^#p=([\w-]+)/); if (!m || hashDone === m[1]) return;
+  const el = document.getElementById("post-" + m[1]); if (!el) return; hashDone = m[1];
+  el.scrollIntoView({ block: "center" }); el.style.outline = "2px solid var(--green)"; setTimeout(() => el.style.outline = "", 3000);
+}
+function goalFx() { for (let i = 0; i < 26; i++) { const s = document.createElement("span"); s.className = "fall"; s.textContent = i % 3 ? "⚽" : "🎉"; s.style.left = Math.random() * 100 + "vw"; s.style.animationDelay = Math.random() * 0.8 + "s"; document.body.appendChild(s); setTimeout(() => s.remove(), 3500); } }
+function ics(m) {
+  const f = ts => new Date(ts).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const txt = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Orkide//TR", "BEGIN:VEVENT", "UID:" + m.id + "@orkide", "DTSTAMP:" + f(Date.now()), "DTSTART:" + f(m.at), "DTEND:" + f(m.at + 72e5),
+    "SUMMARY:" + (m.type === "antrenman" ? "Antrenman" : TEAM + " maçı" + (m.opp ? " - " + m.opp : "")), "LOCATION:" + (m.place || ""), "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = "mac.ics"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+document.addEventListener("click", e => {
+  const pi = e.target.closest("[data-pi]");
+  if (pi && !e.target.closest("[data-mvp]")) { openPlayer(+pi.dataset.pi); return; }
+  if (e.target.id === "pmodal" || e.target.id === "pclose") { $("#pmodal").classList.add("hide"); return; }
+  const gt = e.target.closest("[data-goto]");
+  if (gt) { document.querySelector('[data-view="home"]').click(); setTimeout(() => { const el = document.getElementById("post-" + gt.dataset.goto); if (el) { el.scrollIntoView({ block: "center" }); el.style.outline = "2px solid var(--green)"; setTimeout(() => el.style.outline = "", 3000); } }, 80); return; }
+  const ct = e.target.closest("[data-cat]");
+  if (ct) { catFilter = ct.dataset.cat; document.querySelectorAll("[data-cat]").forEach(x => x.classList.toggle("ghost", x !== ct)); renderFeeds(); return; }
+  const ic = e.target.closest("[data-ics]"); if (ic) { ics({ id: ic.dataset.ics, ...matchesData[ic.dataset.ics] }); return; }
+  const ch = e.target.closest("[data-cheer]");
+  if (ch && Date.now() - lastCheer > 700) { lastCheer = Date.now(); runTransaction(dref(db, "live/cheers"), v => (v || 0) + 1).catch(() => {}); return; }
+  const fs = e.target.closest("[data-fs]");
+  if (fs) { const n = Math.max(-2, Math.min(4, (+localStorage.getItem("orkide_fs") || 0) + +fs.dataset.fs)); try { localStorage.setItem("orkide_fs", n); } catch {} document.documentElement.style.fontSize = (16 + n * 1.5) + "px"; }
+});
+$("#emoBar").onclick = e => { const b = e.target.closest("button"); if (!b) return; const ta = $("#text"), s = ta.selectionStart ?? ta.value.length; ta.value = (ta.value.slice(0, s) + b.textContent + ta.value.slice(ta.selectionEnd ?? s)).slice(0, 280); ta.focus(); ta.dispatchEvent(new Event("input")); };
+$("#text").addEventListener("input", () => { try { localStorage.setItem("orkide_draft", $("#text").value); } catch {} });
+try { const dr = localStorage.getItem("orkide_draft"); if (dr) { $("#text").value = dr; $("#cnt").textContent = dr.length + "/280"; } document.documentElement.style.fontSize = (16 + (+localStorage.getItem("orkide_fs") || 0) * 1.5) + "px"; } catch {}
+$("#nperm").onclick = async () => { if (!("Notification" in window)) return alert("Bu tarayıcı bildirimleri desteklemiyor."); const r = await Notification.requestPermission(); alert(r === "granted" ? "Maç başlayınca sana haber vereceğiz." : "Bildirim izni verilmedi."); };
+addEventListener("online", () => $("#offline").classList.add("hide")); addEventListener("offline", () => $("#offline").classList.remove("hide"));
+if (!navigator.onLine) $("#offline").classList.remove("hide");
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); dip = e; $("#install").classList.remove("hide"); });
+$("#install").onclick = async () => { if (!dip) return; dip.prompt(); await dip.userChoice.catch(() => {}); dip = null; $("#install").classList.add("hide"); };
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>
