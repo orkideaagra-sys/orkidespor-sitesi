@@ -141,6 +141,11 @@ aside{display:none}main{border:0}
 .fall{position:fixed;top:-30px;font-size:26px;z-index:90;pointer-events:none;animation:fall 2.4s linear forwards}
 @keyframes fall{to{transform:translateY(112vh) rotate(540deg);opacity:.85}}
 .pl{cursor:pointer}
+.ub{background:var(--red);color:#fff;border-radius:999px;padding:1px 8px;font-size:13px;margin-left:auto}
+#mbadge,#mbadge2{color:var(--red);font-style:normal;font-weight:800}
+.pitch{background:linear-gradient(#1b7a4f,#14633f);border:2px solid #e6f3f1;border-radius:14px;margin:12px 18px;padding:14px 6px;display:grid;gap:18px}
+.pl-row{display:flex;justify-content:space-around}.pp{text-align:center;color:#fff;font-size:12px;max-width:70px}.pp .av{width:40px;height:40px;margin:0 auto 2px;font-size:16px}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px;padding:8px 12px}.gal img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;background:var(--panel2)}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style>
 </head>
@@ -159,7 +164,7 @@ aside{display:none}main{border:0}
     <button class="btn" id="authBtn">Giriş yap</button>
     <button class="btn ghost" type="button" id="toggle">Hesabın yok mu? Kayıt ol</button>
     <button class="btn ghost" type="button" id="google">Google ile devam et</button>
-    <button class="btn ghost" type="button" id="guest">Hesapsız devam etme kapatıldı.</button>
+    <button class="btn ghost" type="button" id="guest">Hesapsız devam et (misafir)</button>
     <button class="btn ghost hide" type="button" id="forgot">Şifremi unuttum</button>
     <div class="credit">HamzaStudios tarafından yapılmıştır</div>
   </form>
@@ -173,7 +178,7 @@ aside{display:none}main{border:0}
     <button class="nav" data-view="players">⚽ <span>Oyuncular</span></button>
     <button class="nav" data-view="notifs">🔔 <span>Bildirimler<b id="nbadge2"></b></span></button>
     <button class="nav" data-view="videos">🎬 <span>Videolar</span></button>
-    <button class="nav" data-view="messages">💬 <span>Mesajlar</span></button>
+    <button class="nav" data-view="messages">💬 <span>Mesajlar<b id="mbadge2"></b></span></button>
     <button class="nav" data-view="profile">👤 <span>Profil</span></button>
     <div class="user"><div class="av" id="meAv" style="width:36px;height:36px"></div><span id="meName"></span><button class="btn ghost" id="theme" title="Tema" style="padding:6px 10px">🌓</button><button class="btn ghost" id="out" title="Çıkış" style="padding:6px 12px">↩</button></div>
   </aside>
@@ -206,7 +211,7 @@ aside{display:none}main{border:0}
           <div class="err" id="perr"></div>
         </div>
       </div>
-      <div id="catBar" class="acts" style="padding:8px 18px;gap:6px"><button class="btn s" data-cat="">Hepsi</button><button class="btn ghost s" data-cat="Maç">Maç</button><button class="btn ghost s" data-cat="Antrenman">Antrenman</button><button class="btn ghost s" data-cat="Duyuru">Duyuru</button><button class="btn ghost s" data-cat="Eğlence">Eğlence</button></div>
+      <div id="catBar" class="acts" style="padding:8px 18px;gap:6px"><button class="btn s" data-cat="">Hepsi</button><button class="btn ghost s" data-cat="Maç">Maç</button><button class="btn ghost s" data-cat="Antrenman">Antrenman</button><button class="btn ghost s" data-cat="Duyuru">Duyuru</button><button class="btn ghost s" data-cat="Eğlence">Eğlence</button><button class="btn ghost s" data-weekly style="margin-left:auto">📰 Haftalık özet</button></div>
       <div id="filterBar" class="hide"><span id="filterText"></span><button class="btn ghost" id="filterClear">✕ Temizle</button></div>
       <div id="feed"><div class="empty">Yükleniyor…</div></div>
     </section>
@@ -222,6 +227,8 @@ aside{display:none}main{border:0}
       </div>
       <div class="top" style="position:static">📅 Fikstür</div>
       <div id="fixBox"></div>
+      <div class="top" style="position:static">⚽ İlk 11</div>
+      <div id="lineupBox"></div>
       <div class="top" style="position:static">🎯 Tahmin yarışması</div>
       <div id="predBoard"></div>
       <div class="top" style="position:static">📊 Puan durumu</div>
@@ -230,12 +237,17 @@ aside{display:none}main{border:0}
       <div id="scorers"></div>
       <div class="top" style="position:static">🏅 Ödüller</div>
       <div id="awardBox"></div>
+      <div class="top" style="position:static">❓ Takıma sor</div>
+      <form id="qaForm" class="cform" style="padding:10px 18px"><input class="f" id="qaText" maxlength="200" placeholder="Takıma bir soru sor…" autocomplete="off"><button class="btn">Sor</button></form>
+      <div id="qaBox"></div>
       <div class="top" style="position:static">⭐ Maçın adamı oylaması</div>
       <div class="players" id="plist"></div>
     </section>
     <section id="notifs" class="hide"><div class="top">Bildirimler</div><div class="acts" style="padding:10px 18px"><button class="btn ghost s" id="nperm">🔔 Tarayıcı bildirimi aç</button><button class="btn ghost s" id="nclear">Hepsini temizle</button></div><div id="nlist"></div></section>
 
-    <section id="videos" class="hide"><div class="top">Videolar</div><div class="vgrid" id="vgrid"></div></section>
+    <section id="videos" class="hide"><div class="top">Videolar</div><div class="vgrid" id="vgrid"></div>
+      <div class="top" style="position:static">📷 Fotoğraflar</div>
+      <div class="gal" id="gal"></div></section>
 
     <section id="find" class="hide">
       <div class="top">Ara</div>
@@ -294,7 +306,7 @@ aside{display:none}main{border:0}
   <button data-view="home" class="on"><b>🏠</b>Ana Sayfa</button>
   <button data-view="players"><b>⚽</b>Oyuncular</button>
   <button data-view="videos"><b>🎬</b>Video</button>
-  <button data-view="messages"><b>💬</b>Mesajlar</button>
+  <button data-view="messages"><b>💬</b>Mesajlar<em id="mbadge"></em></button>
   <button data-view="find"><b>🔍</b>Ara</button>
   <button data-view="profile"><b>👤</b>Profil</button>
 </nav>
@@ -580,7 +592,7 @@ function renderFeeds() {
   $("#pcount").textContent = mine.length + " gönderi";
   $("#findFeed").innerHTML = term ? (f.length ? f.map(postHTML).join("") : '<div class="empty">Eşleşen gönderi yok.</div>') : '<div class="empty">Aramak için bir şey yaz.</div>';
   $("#filterBar").classList.toggle("hide", !term); $("#filterText").textContent = "Filtre: " + term;
-  hydrate(); renderPeople(); renderWeek(); openHash();
+  renderGallery(); hydrate(); renderPeople(); renderWeek(); openHash();
   const cnt = {};
   allDocs.forEach(d => ((d.data().text || "").match(/(?:^|\s)#[\p{L}_][\p{L}\p{N}_]*/gu) || []).forEach(t => { t = t.trim().toLowerCase(); cnt[t] = (cnt[t] || 0) + 1; }));
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -667,13 +679,13 @@ function listenUsers() {
 }
 function renderUsers() {
   renderPeople();
-  const q = nkey($("#dmSearch").value), l = allUsers.filter(u => !myBlocks[u.uid] && (!q || nkey(u.name).includes(q))).sort((a, b) => (online[b.uid] ? 1 : 0) - (online[a.uid] ? 1 : 0));
-  $("#dmUsers").innerHTML = l.length ? l.map(u => `<button class="dmu" data-dm="${esc(u.uid)}"><div class="av">${esc(u.name[0].toUpperCase())}<i class="dot ${online[u.uid] ? "on" : ""}"></i></div><div><b>${esc(u.name)}</b><div class="meta">${online[u.uid] ? "Çevrimiçi" : "Çevrimdışı"}</div></div></button>`).join("")
+  const q = nkey($("#dmSearch").value), l = allUsers.filter(u => !myBlocks[u.uid] && (!q || nkey(u.name).includes(q))).sort((a, b) => (pins().has(b.uid) - pins().has(a.uid)) || ((dmMeta[b.uid]?.last || 0) - (dmMeta[a.uid]?.last || 0)) || ((online[b.uid] ? 1 : 0) - (online[a.uid] ? 1 : 0)));
+  $("#dmUsers").innerHTML = l.length ? l.map(u => `<button class="dmu" data-dm="${esc(u.uid)}"><div class="av">${esc(u.name[0].toUpperCase())}<i class="dot ${online[u.uid] ? "on" : ""}"></i></div><div><b>${esc(u.name)}</b><div class="meta">${online[u.uid] ? "Çevrimiçi" : "Çevrimdışı"}</div></div>${dmMeta[u.uid]?.unread ? `<b class="ub">${dmMeta[u.uid].unread}</b>` : ""}<span data-pin="${esc(u.uid)}" style="margin-left:${dmMeta[u.uid]?.unread ? "8px" : "auto"};opacity:${pins().has(u.uid) ? 1 : .35}" title="Sabitle">📌</span></button>`).join("")
     : '<div class="empty">Kimse bulunamadı.</div>';
 }
 function openChat(uid) {
   const u = allUsers.find(x => x.uid === uid); if (!u) return;
-  chatWith = uid; $("#dmWith").textContent = u.name;
+  chatWith = uid; $("#dmWith").textContent = u.name; set(dref(db, `dmmeta/${me.uid}/${uid}/unread`), 0).catch(() => {});
   $("#dmList").classList.add("hide"); $("#dmChat").classList.remove("hide");
   chatUnsub?.();
   $("#dmTyping").classList.add("hide"); dmLast = null; dmSeenTs = 0; $("#dmSeen").classList.add("hide");
@@ -683,18 +695,18 @@ function openChat(uid) {
       : '<div class="empty">Henüz mesaj yok. İlk mesajı sen yaz.</div>';
     window.scrollTo(0, document.body.scrollHeight);
     dmLast = a[a.length - 1]; updSeen();
-    if (dmLast && dmLast.from !== me.uid) set(dref(db, "reads/" + chatId(me.uid, uid) + "/" + me.uid), serverTimestamp()).catch(() => {});
+    if (dmLast && dmLast.from !== me.uid) { set(dref(db, "reads/" + chatId(me.uid, uid) + "/" + me.uid), serverTimestamp()).catch(() => {}); set(dref(db, `dmmeta/${me.uid}/${uid}/unread`), 0).catch(() => {}); }
   }, e => $("#dmMsgs").innerHTML = `<div class="empty">Mesajlar yüklenemedi (${esc(e.code)}). Kuralları kontrol et.</div>`);
   const c2 = onValue(dref(db, "typing/" + chatId(me.uid, uid) + "/" + uid), t => $("#dmTyping").classList.toggle("hide", !t.val()));
   const c3 = onValue(dref(db, "reads/" + chatId(me.uid, uid) + "/" + uid), r => { dmSeenTs = r.val() || 0; updSeen(); });
   chatUnsub = () => { c1(); c2(); c3(); };
 }
-$("#dmUsers").onclick = e => { const b = e.target.closest("[data-dm]"); if (b) openChat(b.dataset.dm); };
+$("#dmUsers").onclick = e => { const pn = e.target.closest("[data-pin]"); if (pn) { togglePin(pn.dataset.pin); return; } const b = e.target.closest("[data-dm]"); if (b) openChat(b.dataset.dm); };
 $("#dmSearch").oninput = renderUsers;
 $("#dmBack").onclick = () => { chatUnsub?.(); chatWith = null; $("#dmChat").classList.add("hide"); $("#dmList").classList.remove("hide"); };
 $("#dmForm").onsubmit = async e => {
   e.preventDefault(); if (isMuted()) return; if (settings.dmOff && !adminFlag) return alert("Mesajlaşma geçici olarak kapalı."); const t = $("#dmText").value.trim(); if (!t || !chatWith) return; if (badWord(t)) return alert("Mesajında yasaklı bir kelime var."); $("#dmText").value = "";
-  try { await push(dref(db, "dms/" + chatId(me.uid, chatWith)), { from: me.uid, text: t, createdAt: serverTimestamp() }); }
+  try { await push(dref(db, "dms/" + chatId(me.uid, chatWith)), { from: me.uid, text: t, createdAt: serverTimestamp() }); bumpDm(chatWith); }
   catch (err) { alert("Mesaj gönderilemedi: " + (err.code || err.message)); }
 };
 let tt;
@@ -882,7 +894,7 @@ $("#dmMic").onclick = async () => {
       const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" }); rec = null;
       if (blob.size < 1500) return;
       const data = await new Promise(ok => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.readAsDataURL(blob); });
-      try { await push(dref(db, "dms/" + chatId(me.uid, to)), { from: me.uid, audio: data, dur: Math.round((Date.now() - t0) / 1000), createdAt: serverTimestamp() }); }
+      try { await push(dref(db, "dms/" + chatId(me.uid, to)), { from: me.uid, audio: data, dur: Math.round((Date.now() - t0) / 1000), createdAt: serverTimestamp() }); bumpDm(to); }
       catch (err) { alert("Sesli mesaj gönderilemedi: " + (err.code || err.message)); }
     };
     rec.start(); $("#dmMic").classList.add("rec");
@@ -931,8 +943,12 @@ function listenExtras() {
   w("awards", v => { awardsData = v; renderAwards(); });
   w("table", v => { tableData = v; renderTable(); });
   w("verified", v => { verifiedMap = v; renderFeeds(); });
+  w("lineup", v => { lineupData = v; renderLineup(); });
+  w("qa", v => { qaData = v; renderQA(); });
+  w("ratings", v => { ratingsData = v; renderFix(); });
   w("predictions", v => { predData = v; renderFix(); });
   if (!isGuest) w("notifs/" + me.uid, v => { notifs = v; renderNotifs(); });
+  if (!isGuest) w("dmmeta/" + me.uid, v => { dmMeta = v; renderUsers(); renderUnread(); });
   w("", v => renderChat(v), query(dref(db, "livechat"), limitToLast(80)));
   if (!isGuest) w("saved/" + me.uid, v => { mySaved = v; renderFeeds(); });
 }
@@ -941,11 +957,11 @@ const reactSum = p => {
   return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([e, n]) => e + n).join(" ");
 };
 function pollHTML(p, id) {
-  const v = votesData[id] || {}, vals = Object.values(v), tot = vals.length, mine = me ? v[me.uid] : undefined, res = isGuest || mine !== undefined;
+  const v = votesData[id] || {}, vals = Object.values(v), tot = vals.length, mine = me ? v[me.uid] : undefined, closed = !!(p.poll.until && Date.now() > p.poll.until), res = isGuest || mine !== undefined || closed;
   return `<div class="poll"><b>📊 ${esc(p.poll.q)}</b>` + p.poll.opts.map((o, i) => {
     const n = vals.filter(x => x === i).length, pc = tot ? Math.round(100 * n / tot) : 0;
     return res ? `<div class="opt"><div class="fill" style="width:${pc}%"></div><span>${esc(o)}${mine === i ? " ✓" : ""} — %${pc} (${n})</span></div>` : `<button data-vote="${id}" data-i="${i}"><span>${esc(o)}</span></button>`;
-  }).join("") + `<small class="meta">${tot} oy</small></div>`;
+  }).join("") + `<small class="meta">${tot} oy${p.poll.until ? (closed ? " · kapandı" : " · " + cd(p.poll.until - Date.now()) + " kaldı") : ""}</small></div>`;
 }
 $("#pollBtn").onclick = () => {
   if (pendingPoll) { pendingPoll = null; $("#pollChip").classList.add("hide"); return; }
@@ -953,7 +969,8 @@ $("#pollBtn").onclick = () => {
   const q = prompt("Anket sorusu:"); if (!q || !q.trim()) return;
   const o = (prompt("Seçenekleri virgülle ayır (2-4 seçenek):", "Evet, Hayır") || "").split(",").map(x => x.trim().slice(0, 40)).filter(Boolean).slice(0, 4);
   if (o.length < 2) return alert("En az 2 seçenek yaz.");
-  pendingPoll = { q: q.trim().slice(0, 120), opts: o };
+  const dd = parseFloat((prompt("Anket kaç gün açık kalsın? (boş bırak = süresiz)", "") || "").replace(",", "."));
+  pendingPoll = { q: q.trim().slice(0, 120), opts: o, ...(dd > 0 ? { until: Date.now() + Math.min(dd, 30) * 864e5 } : {}) };
   $("#pollChip").textContent = "📊 " + pendingPoll.q + " (" + o.join(" / ") + ") — kaldırmak için Anket'e tekrar bas"; $("#pollChip").classList.remove("hide");
 };
 const fmtDT = ts => new Date(ts).toLocaleString("tr-TR", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -1192,6 +1209,81 @@ if (!navigator.onLine) $("#offline").classList.remove("hide");
 addEventListener("beforeinstallprompt", e => { e.preventDefault(); dip = e; $("#install").classList.remove("hide"); });
 $("#install").onclick = async () => { if (!dip) return; dip.prompt(); await dip.userChoice.catch(() => {}); dip = null; $("#install").classList.add("hide"); };
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+/* ---------- Son eklemeler: okunmamış sayacı, sabitleme, maç puanlama, ilk 11, galeri, soru-cevap, haftalık özet ---------- */
+let dmMeta = {}, lineupData = {}, qaData = {}, ratingsData = {};
+const pins = () => { try { return new Set(JSON.parse(localStorage.getItem("orkide_pins") || "[]")); } catch { return new Set(); } };
+function togglePin(uid) { const s = pins(); s.has(uid) ? s.delete(uid) : s.add(uid); try { localStorage.setItem("orkide_pins", JSON.stringify([...s])); } catch {} renderUsers(); }
+function bumpDm(to) {
+  if (!to) return;
+  runTransaction(dref(db, `dmmeta/${to}/${me.uid}/unread`), v => (v || 0) + 1).catch(() => {});
+  update(dref(db, `dmmeta/${to}/${me.uid}`), { last: serverTimestamp() }).catch(() => {});
+}
+function renderUnread() {
+  const n = Object.values(dmMeta).reduce((s, x) => s + (x.unread || 0), 0);
+  $("#mbadge").textContent = n ? " " + n : ""; $("#mbadge2").textContent = n ? " " + n : "";
+}
+function renderLineup() {
+  const L = lineupData, el = $("#lineupBox");
+  if (!L.players) { el.innerHTML = '<div class="empty">İlk 11 henüz açıklanmadı.</div>'; return; }
+  let i = 0; const rows = [1, ...(L.formation || "4-4-2").split("-").map(Number)].map(n => { const a = L.players.slice(i, i + n); i += n; return a; }).reverse();
+  el.innerHTML = '<div class="pitch">' + rows.map(r => `<div class="pl-row">${r.map(n => `<div class="pp"><div class="av">${esc((n || "?")[0])}</div>${esc((n || "").split(" ").slice(-1)[0])}</div>`).join("")}</div>`).join("") + `</div><div class="meta" style="text-align:center">Diziliş: ${esc(L.formation || "")}</div>`;
+}
+function renderGallery() {
+  const l = allDocs.filter(d => d.data().mediaType === "image" && !myBlocks[d.data().uid]).slice(0, 60);
+  $("#gal").innerHTML = l.length ? l.map(d => { const p = d.data(); return `<img data-goto="${d.id}" ${p.mediaRef ? `data-mref="${esc(p.mediaRef)}"` : `src="${esc(p.videoUrl)}"`} alt="">`; }).join("") : '<div class="empty" style="grid-column:1/-1">Henüz fotoğraf yok.</div>';
+}
+function renderQA() {
+  const l = Object.entries(qaData).sort((a, b) => (b[1].at || 0) - (a[1].at || 0)).slice(0, 30);
+  $("#qaBox").innerHTML = l.length ? l.map(([, q]) => `<div class="fx"><div style="flex:1"><b>${esc(q.q)}</b><div class="meta">${esc(q.author)} · ${ago(q.at)}</div>${q.a ? `<div style="margin-top:6px;color:var(--green)">💬 ${esc(q.a)}</div>` : '<div class="meta">Yanıt bekliyor…</div>'}</div></div>`).join("") : '<div class="empty">Henüz soru yok. İlk soruyu sen sor!</div>';
+  $("#qaForm").classList.toggle("hide", isGuest);
+}
+$("#qaForm").onsubmit = async e => {
+  e.preventDefault(); const x = $("#qaText").value.trim(); if (!x || isMuted()) return;
+  if (badWord(x)) return alert("Sorunda yasaklı bir kelime var.");
+  $("#qaText").value = "";
+  try { await push(dref(db, "qa"), { uid: me.uid, author: nameOf(me), q: x, at: serverTimestamp() }); } catch (err) { alert("Gönderilemedi: " + (err.code || err.message)); }
+};
+const _r2 = renderFix;
+renderFix = function () {
+  _r2();
+  document.querySelectorAll("#fixBox .fx[data-mid]").forEach(el => {
+    const mid = el.dataset.mid, m = matchesData[mid]; if (!m || m.type === "antrenman" || m.us == null) return;
+    const r = ratingsData[mid] || {}, avg = PLAYERS.map(p => { const v = Object.values(r[nkey(p.name)] || {}); return { n: p.name, a: v.length ? v.reduce((s, x) => s + x, 0) / v.length : 0, c: v.length }; }).filter(x => x.c).sort((a, b) => b.a - a.a)[0];
+    const box = document.createElement("div"); box.className = "meta";
+    box.innerHTML = (avg ? `🌟 Maçın en iyisi: <b>${esc(avg.n)}</b> (${avg.a.toFixed(1)}) ` : "") + (isGuest ? "" : `<button class="btn ghost s" data-rate="${mid}">⭐ Oyuncuları puanla</button>`);
+    el.children[1].appendChild(box);
+  });
+};
+function openRate(mid) {
+  const mine = {}; PLAYERS.forEach(p => { const v = ((ratingsData[mid] || {})[nkey(p.name)] || {})[me.uid]; if (v) mine[nkey(p.name)] = v; });
+  $("#pbox").innerHTML = '<h3>Oyuncuları puanla (1-10)</h3><div style="max-height:55vh;overflow:auto;text-align:left">' + PLAYERS.map(p => `<div class="fx" style="padding:6px 0"><div style="flex:1">${esc(p.name)}</div><select class="f" data-rp="${nkey(p.name)}" style="width:80px;min-height:36px"><option value="">–</option>${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<option ${mine[nkey(p.name)] === n ? "selected" : ""}>${n}</option>`).join("")}</select></div>`).join("") + `</div><button class="btn" id="rsave" data-mid="${mid}">Kaydet</button><button class="btn ghost" id="pclose">Kapat</button>`;
+  $("#pmodal").classList.remove("hide");
+}
+function openWeekly() {
+  const cut = Date.now() - 7 * 864e5, ps = allDocs.filter(d => (d.data().createdAt || 0) > cut), likes = ps.reduce((n, d) => n + d.data().likes.length, 0);
+  const by = {}; ps.forEach(d => by[d.data().author] = (by[d.data().author] || 0) + 1);
+  const top = Object.entries(by).sort((a, b) => b[1] - a[1])[0], best = ps.slice().sort((a, b) => b.data().likes.length - a.data().likes.length)[0];
+  const ms = Object.values(matchesData).filter(m => m.at > cut && m.at < Date.now() && m.us != null), gf = ms.reduce((n, m) => n + m.us, 0), ga = ms.reduce((n, m) => n + m.them, 0);
+  const w = ms.filter(m => m.us > m.them).length, dr = ms.filter(m => m.us === m.them).length, nx = Object.values(matchesData).filter(m => m.at > Date.now()).sort((a, b) => a.at - b.at)[0];
+  $("#pbox").innerHTML = '<h2>📰 Haftalık özet</h2><div style="text-align:left;display:grid;gap:8px">'
+    + `<div>📝 <b>${ps.length}</b> gönderi · ❤ <b>${likes}</b> beğeni</div>`
+    + (top ? `<div>🏆 En aktif: <b>${esc(top[0])}</b> (${top[1]} gönderi)</div>` : "")
+    + (best && best.data().likes.length ? `<div>🌟 Haftanın gönderisi: <b>${esc(best.data().author)}</b> — ${esc((best.data().text || "[medya]").slice(0, 50))} (${best.data().likes.length} ❤)</div>` : "")
+    + `<div>⚽ Maçlar: <b>${ms.length}</b> · ${w} G / ${dr} B / ${ms.length - w - dr} M · ${gf} attı, ${ga} yedi</div>`
+    + (nx ? `<div>📅 Sıradaki: <b>${nx.type === "antrenman" ? "Antrenman" : vs(nx)}</b> · ${fmtDT(nx.at)}</div>` : "") + '</div><button class="btn" id="pclose">Kapat</button>';
+  $("#pmodal").classList.remove("hide");
+}
+document.addEventListener("click", e => {
+  const rt = e.target.closest("[data-rate]"); if (rt) { openRate(rt.dataset.rate); return; }
+  if (e.target.closest("[data-weekly]")) { openWeekly(); return; }
+  const rs = e.target.closest("#rsave");
+  if (rs) {
+    const u = {}; document.querySelectorAll("[data-rp]").forEach(s => { if (s.value) u[s.dataset.rp + "/" + me.uid] = +s.value; });
+    if (!Object.keys(u).length) return alert("En az bir oyuncuya puan ver.");
+    update(dref(db, "ratings/" + rs.dataset.mid), u).then(() => { $("#pmodal").classList.add("hide"); alert("Puanların kaydedildi."); }).catch(() => alert("Puanlar kaydedilemedi."));
+  }
+});
 </script>
 </body>
 </html>
