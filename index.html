@@ -10,7 +10,6 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("orkide_theme")||"dark"}catch(e){}</script>
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <style>
 :root{--bg:#06161f;--panel:#0b2330;--panel2:#0f2f40;--line:#17435a;--text:#e6f3f1;--mute:#7fa3ab;--green:#22b98a;--green2:#16906a;--blue:#1d6f9c;--red:#e5586b}
 *{box-sizing:border-box;margin:0}
@@ -147,6 +146,14 @@ aside{display:none}main{border:0}
 .pitch{background:linear-gradient(#1b7a4f,#14633f);border:2px solid #e6f3f1;border-radius:14px;margin:12px 18px;padding:14px 6px;display:grid;gap:18px}
 .pl-row{display:flex;justify-content:space-around}.pp{text-align:center;color:#fff;font-size:12px;max-width:70px}.pp .av{width:40px;height:40px;margin:0 auto 2px;font-size:16px}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:4px;padding:8px 12px}.gal img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;background:var(--panel2)}
+.hubg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:14px 18px}
+.hubc{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 8px;font-size:15px;text-align:center;cursor:pointer;color:var(--text)}.hubc b{display:block;font-size:32px;margin-bottom:4px}
+.hubc:hover{border-color:var(--green)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:130px;padding:20px 0 22px}
+.bar{flex:1;background:linear-gradient(var(--green),#16906a);border-radius:6px 6px 0 0;position:relative;min-height:3px}
+.bar i{position:absolute;top:-18px;left:0;right:0;text-align:center;font-style:normal;font-size:12px}.bar small{position:absolute;bottom:-20px;left:0;right:0;text-align:center;color:var(--mute);font-size:11px}
+.lvbar{height:10px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:6px}.lvbar i{display:block;height:100%;background:var(--green)}
+#tcv{width:100%;max-width:360px;touch-action:none;border-radius:12px;display:block;margin:0 auto;background:#1b7a4f}
 :focus-visible{outline:2px solid var(--green);outline-offset:2px}
 </style>
 </head>
@@ -161,7 +168,6 @@ aside{display:none}main{border:0}
     <input class="f hide" id="uname" placeholder="Kullanıcı adı" maxlength="24" autocomplete="username">
     <input class="f" id="email" type="text" placeholder="Kullanıcı adı veya e-posta" autocomplete="username">
     <input class="f" id="pass" type="password" placeholder="Şifre (en az 6 karakter)" required minlength="6" autocomplete="current-password">
-    <div class="g-recaptcha" data-sitekey="6Ld79AMuAAAAAHxwGHFhjPA5HLG0dPixkVw1TcOA"></div>
     <div class="err" id="err"></div>
     <button class="btn" id="authBtn">Giriş yap</button>
     <button class="btn ghost" type="button" id="toggle">Hesabın yok mu? Kayıt ol</button>
@@ -178,6 +184,7 @@ aside{display:none}main{border:0}
     <div class="brand"><span class="logo" data-logo>🌷</span><span>Orkide</span></div>
     <button class="nav on" data-view="home">🏠 <span>Ana Sayfa</span></button>
     <button class="nav" data-view="players">⚽ <span>Oyuncular</span></button>
+    <button class="nav" data-view="hub">🧰 <span>Araçlar</span></button>
     <button class="nav" data-view="notifs">🔔 <span>Bildirimler<b id="nbadge2"></b></span></button>
     <button class="nav" data-view="videos">🎬 <span>Videolar</span></button>
     <button class="nav" data-view="messages">💬 <span>Mesajlar<b id="mbadge2"></b></span></button>
@@ -186,7 +193,7 @@ aside{display:none}main{border:0}
   </aside>
 
   <main>
-    <header class="mtop"><span class="logo" data-logo>🌷</span><span>Orkide</span><button class="btn ghost s" data-view="notifs" style="margin-left:auto">🔔<b id="nbadge"></b></button><button class="btn ghost s" id="theme2" style="margin-left:6px">🌓</button><button class="btn ghost" id="out2" style="margin-left:6px">Çıkış</button></header>
+    <header class="mtop"><span class="logo" data-logo>🌷</span><span>Orkide</span><button class="btn ghost s" data-view="hub" style="margin-left:auto">🧰</button><button class="btn ghost s" data-view="notifs" style="margin-left:6px">🔔<b id="nbadge"></b></button><button class="btn ghost s" id="theme2" style="margin-left:6px">🌓</button><button class="btn ghost" id="out2" style="margin-left:6px">Çıkış</button></header>
     <section id="home">
       <div class="top">Ana Sayfa</div>
       <div id="ann" class="hide"></div>
@@ -245,6 +252,8 @@ aside{display:none}main{border:0}
       <div class="top" style="position:static">⭐ Maçın adamı oylaması</div>
       <div class="players" id="plist"></div>
     </section>
+    <section id="hub" class="hide"><div class="top">🧰 Araçlar</div><div id="hubBody"></div></section>
+
     <section id="notifs" class="hide"><div class="top">Bildirimler</div><div class="acts" style="padding:10px 18px"><button class="btn ghost s" id="nperm">🔔 Tarayıcı bildirimi aç</button><button class="btn ghost s" id="nclear">Hepsini temizle</button></div><div id="nlist"></div></section>
 
     <section id="videos" class="hide"><div class="top">Videolar</div><div class="vgrid" id="vgrid"></div>
@@ -331,16 +340,16 @@ const PHOTO_DIR = "";   // fotoğraflar deponun ana klasöründe (1.jpeg, 2.png 
 // 12'den fazla oyuncu için bir satırı kopyalayıp alta yapıştır.
 const PLAYERS = [
   { name: "Umut Can Çan", position: "Saha", team: "", number: "16", photo: "1" },
-  { name: "Omur Efe ", position: "Defansif orta saha", team: "", number: "09", photo: "2" },
-  { name: "Yusuf ", position: "Sağ kanat", team: "", number: "19", photo: "3" },
-  { name: "Ahmet Kerem ", position: "Defans", team: "", number: "05", photo: "4" },
-  { name: "Ege1", position: "Defansif orta saha", team: "", number: "04", photo: "5" },
-  { name: "Emirhan ", position: "Kaleci", team: "", number: "01", photo: "6" },
-  { name: "Gökdeniz ", position: "Forvet", team: "", number: "99", photo: "7" },
-  { name: "Mirhan ", position: "Defans", team: "", number: "55", photo: "8" },
-  { name: "Sarp ", position: "Ön libero", team: "", number: "53", photo: "9" },
-  { name: "Ege2", position: "", team: "", number: "14", photo: "10" },
-  { name: "Metehan ", position: "Merkezi orta saha", team: "", number: "10", photo: "11" },
+  { name: "Omur Efe Başaran", position: "Defansif orta saha", team: "", number: "09", photo: "2" },
+  { name: "Yusuf Aktaş", position: "Sağ kanat", team: "", number: "19", photo: "3" },
+  { name: "Ahmet Kerem Ulupınar", position: "Defans", team: "", number: "05", photo: "4" },
+  { name: "Ege Nemli", position: "Defansif orta saha", team: "", number: "04", photo: "5" },
+  { name: "Emirhan Günal", position: "Kaleci", team: "", number: "01", photo: "6" },
+  { name: "Gökdeniz Güven", position: "Forvet", team: "", number: "99", photo: "7" },
+  { name: "Mirhan Kılıç", position: "Defans", team: "", number: "55", photo: "8" },
+  { name: "Sarp Sevinç", position: "Ön libero", team: "", number: "53", photo: "9" },
+  { name: "Ege Gökbudak", position: "", team: "", number: "14", photo: "10" },
+  { name: "Metehan Kaya", position: "Merkezi orta saha", team: "", number: "10", photo: "11" },
   { name: "Oyuncu 12 Adı", position: "", team: "", number: "", photo: "12" },
   { name: "Ayaz Daşdemir", position: "Kanat", team: "", number: "36", photo: "13" },
 ];
@@ -504,9 +513,10 @@ onAuthStateChanged(auth, u => {
 document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => {
   const v = b.dataset.view;
   document.querySelectorAll("[data-view]").forEach(x => x.classList.toggle("on", x.dataset.view === v));
-  ["home", "players", "videos", "messages", "find", "profile", "notifs"].forEach(id => $("#" + id).classList.toggle("hide", v !== id));
+  ["home", "players", "videos", "messages", "find", "profile", "notifs", "hub"].forEach(id => $("#" + id).classList.toggle("hide", v !== id));
   if (v === "home") setSearch("");
   if (v === "notifs") setTimeout(markRead, 1500);
+  if (v === "hub") { hubTool = ""; renderHub(); }
   window.scrollTo(0, 0);
 });
 
@@ -938,7 +948,7 @@ let extraUnsubs = [], votesData = {}, matchesData = {}, liveData = {}, mvpData =
 function listenExtras() {
   const w = (p, fn, q) => extraUnsubs.push(onValue(q || dref(db, p), s => fn(s.val() || {}), () => {}));
   w("votes", v => { votesData = v; renderFeeds(); });
-  w("matches", v => { matchesData = v; renderFix(); });
+  w("matches", v => { matchesData = v; renderFix(); renderHub(); });
   w("live", v => { liveData = v; renderLive(); });
   w("mvp", v => { mvpData = v; renderPlayers(); });
   w("stats", v => { statsData = v; renderPlayers(); });
@@ -946,6 +956,12 @@ function listenExtras() {
   w("table", v => { tableData = v; renderTable(); });
   w("verified", v => { verifiedMap = v; renderFeeds(); });
   w("lineup", v => { lineupData = v; renderLineup(); });
+  w("news", v => { newsData = v; renderHub(); });
+  w("quiz", v => { quizData = v; renderHub(); });
+  w("quizscores", v => { quizScores = v; renderHub(); });
+  w("train", v => { trainData = v; renderHub(); });
+  w("rooms", v => { roomsData = v; renderHub(); });
+  w("rsvp", v => { rsvpData = v; renderHub(); });
   w("qa", v => { qaData = v; renderQA(); });
   w("ratings", v => { ratingsData = v; renderFix(); });
   w("predictions", v => { predData = v; renderFix(); });
@@ -1285,6 +1301,182 @@ document.addEventListener("click", e => {
     if (!Object.keys(u).length) return alert("En az bir oyuncuya puan ver.");
     update(dref(db, "ratings/" + rs.dataset.mid), u).then(() => { $("#pmodal").classList.add("hide"); alert("Puanların kaydedildi."); }).catch(() => alert("Puanlar kaydedilemedi."));
   }
+});
+
+/* ================= ARAÇLAR MERKEZİ: haber, maç merkezi, quiz, antrenman, taktik, odalar, seviye, karşılaştırma ================= */
+let newsData = {}, quizData = {}, quizScores = {}, trainData = {}, roomsData = {}, rsvpData = {}, roomMsgs = {};
+let hubTool = "", newsOpen = "", matchOpen = "", roomOpen = "", quizFb = "", roomUnsub = null, cmpA = 0, cmpB = Math.min(1, PLAYERS.length - 1);
+const EMPTY = '<div class="empty">Henüz bir şey yok.</div>';
+const padBox = h => `<div style="padding:12px 18px">${h}</div>`;
+const backBtn = (to = "") => `<button class="btn ghost s" data-tool="${to}" style="margin-bottom:10px">← Geri</button>`;
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const HUB = [["news", "📰", "Haberler"], ["match", "🏟", "Maç merkezi"], ["quiz", "🧠", "Bilgi yarışması"], ["train", "🏋️", "Antrenman günlüğü"], ["tactic", "📐", "Taktik tahtası"], ["rooms", "💬", "Sohbet odaları"], ["level", "🏅", "Seviye & sıralama"], ["cmp", "⚖️", "Oyuncu karşılaştır"]];
+const TITLES = ["Çaylak", "Amatör", "Yıldız", "Usta", "Kaptan", "Efsane"];
+const lvOf = xp => Math.floor(Math.sqrt(xp / 20)) + 1, titleOf = lv => TITLES[Math.min(TITLES.length - 1, Math.floor((lv - 1) / 3))];
+function xpTable() {
+  const x = {}, add = (u, n) => { if (u) x[u] = (x[u] || 0) + n; };
+  allDocs.forEach(d => { const p = d.data(); add(p.uid, 10 + 2 * p.likes.length + (p.commentsCount || 0)); });
+  Object.entries(quizScores).forEach(([u, s]) => add(u, s.pts || 0));
+  Object.entries(trainData).forEach(([u, l]) => add(u, 3 * Object.keys(l || {}).length));
+  Object.entries(matchesData).forEach(([mid, m]) => { if (m.us == null) return; Object.entries(predData[mid] || {}).forEach(([u, pr]) => add(u, 3 * pts(pr, m))); });
+  return x;
+}
+const tools = {};
+tools.news = () => {
+  if (newsOpen && newsData[newsOpen]) { const n = newsData[newsOpen]; return padBox(backBtn("news") + `<h2>${esc(n.title)}</h2><div class="meta">${ago(n.at)} · ${esc(n.by || "")}</div><div class="txt" style="margin-top:10px">${linkTags(esc(n.body || ""))}</div>`); }
+  const l = Object.entries(newsData).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  return l.length ? l.map(([id, n]) => `<div class="fx" data-act="news" data-id="${id}" style="cursor:pointer"><div style="flex:1"><b>${esc(n.title)}</b><div class="meta">${esc((n.body || "").slice(0, 90))}…</div></div><div class="meta">${ago(n.at)}</div></div>`).join("") : EMPTY;
+};
+tools.match = () => {
+  if (matchOpen && matchesData[matchOpen]) {
+    const m = matchesData[matchOpen], ev = Object.values(m.events || {}).sort((a, b) => (a.min || 0) - (b.min || 0)), rs = rsvpData[matchOpen] || {}, c = { yes: 0, no: 0, maybe: 0 };
+    Object.values(rs).forEach(v => c[v] = (c[v] || 0) + 1);
+    const mine = me && rs[me.uid], ic = { gol: "⚽", asist: "🅰", sari: "🟨", kirmizi: "🟥", degisiklik: "🔄" }, lb = { yes: "✅ Geliyorum", maybe: "🤔 Belki", no: "❌ Gelemem" };
+    return padBox(backBtn("match") + `<h2>${m.type === "antrenman" ? "🏋️ Antrenman" : vs(m)}</h2><div class="meta">${fmtDT(m.at)} · ${esc(m.place || "")}</div>`
+      + (m.us != null ? `<h1 style="margin:8px 0">${m.home ? m.us + " - " + m.them : m.them + " - " + m.us}</h1>` : "")
+      + '<b>Katılım</b><div class="acts" style="padding:8px 0">' + ["yes", "maybe", "no"].map(k => `<button class="btn ${mine === k ? "" : "ghost"} s" data-act="rsvp" data-id="${matchOpen}" data-v="${k}">${lb[k]} (${c[k]})</button>`).join("") + "</div>"
+      + '<b>Olay akışı</b>' + (ev.length ? ev.map(e => `<div class="fx"><div class="d">${e.min}'</div><div style="flex:1">${ic[e.type] || "•"} <b>${esc(e.player || "")}</b>${e.assist ? ` <span class="meta">(asist: ${esc(e.assist)})</span>` : ""}</div></div>`).join("") : '<div class="meta">Henüz olay girilmedi.</div>'));
+  }
+  const l = Object.entries(matchesData).sort((a, b) => b[1].at - a[1].at);
+  return l.length ? l.map(([id, m]) => `<div class="fx" data-act="match" data-id="${id}" style="cursor:pointer"><div class="d">${new Date(m.at).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}</div><div style="flex:1"><b>${m.type === "antrenman" ? "🏋️ Antrenman" : vs(m)}</b><div class="meta">${esc(m.place || "")}</div></div>${m.us != null ? `<b>${m.home ? m.us + "-" + m.them : m.them + "-" + m.us}</b>` : ""}</div>`).join("") : EMPTY;
+};
+tools.quiz = () => {
+  const my = quizScores[me.uid] || {}, ans = my.answered || {}, qs = Object.entries(quizData).sort((a, b) => (a[1].at || 0) - (b[1].at || 0)), next = qs.find(([id]) => !ans[id]);
+  const board = Object.entries(quizScores).map(([u, s]) => [u, s.pts || 0]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  return padBox(`<div class="meta">Puanın: <b>${my.pts || 0}</b> · ${Object.keys(ans).length}/${qs.length} soru</div>` + (quizFb ? `<div class="live" style="margin:8px 0">${quizFb}</div>` : "")
+    + (next ? `<h3 style="margin:12px 0">${esc(next[1].q)}</h3><div class="poll">${next[1].opts.map((o, i) => `<button data-act="quiz" data-id="${next[0]}" data-i="${i}"><span>${esc(o)}</span></button>`).join("")}</div>` : '<div class="empty">Şu an cevaplanacak soru kalmadı. 🎉</div>')
+    + '<div class="top" style="position:static;margin-top:12px">🏆 Sıralama</div>' + (board.length ? board.map(([u, p], i) => `<div class="fx"><div class="d">${["🥇", "🥈", "🥉"][i] || i + 1}</div><div style="flex:1"><b>${esc(nameFor(u))}</b></div><b>${p} puan</b></div>`).join("") : '<div class="meta">Henüz puan yok.</div>'));
+};
+tools.train = () => {
+  if (isGuest) return padBox("Antrenman günlüğü için hesap oluştur.");
+  const mine = Object.entries(trainData[me.uid] || {}).sort((a, b) => (b[1].at || 0) - (a[1].at || 0)), days = [...Array(7)].map((_, i) => new Date(Date.now() - (6 - i) * 864e5).toISOString().slice(0, 10));
+  const per = days.map(d => mine.filter(([, x]) => x.day === d).reduce((n, [, x]) => n + x.min, 0)), mx = Math.max(30, ...per), wk = per.reduce((a, b) => a + b, 0);
+  const board = Object.entries(trainData).map(([u, l]) => [u, Object.values(l || {}).filter(x => x.day >= days[0]).reduce((n, x) => n + x.min, 0)]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return padBox('<form id="trForm" style="display:grid;gap:8px"><select class="f" id="trT"><option>Antrenman</option><option>Koşu</option><option>Kondisyon</option><option>Gym</option><option>Maç</option></select><input class="f" id="trM" type="number" min="5" max="300" placeholder="Süre (dakika)" required><input class="f" id="trR" type="number" min="1" max="10" placeholder="Zorluk 1-10 (isteğe bağlı)"><button class="btn">Kaydet</button></form>'
+    + `<div class="meta" style="margin-top:12px">Bu hafta: <b>${wk} dk</b></div><div class="bars">${per.map((n, i) => `<div class="bar" style="height:${Math.max(3, n / mx * 100)}px"><i>${n || ""}</i><small>${new Date(days[i]).toLocaleDateString("tr-TR", { weekday: "short" })}</small></div>`).join("")}</div>`
+    + '<b>🏆 Haftanın en çalışkanları</b>' + (board.length ? board.map(([u, m], i) => `<div class="fx"><div class="d">${i + 1}</div><div style="flex:1">${esc(nameFor(u))}</div><b>${m} dk</b></div>`).join("") : '<div class="meta">Henüz kayıt yok.</div>')
+    + '<b style="display:block;margin-top:12px">Son kayıtların</b>' + (mine.slice(0, 8).map(([id, x]) => `<div class="fx"><div style="flex:1">${esc(x.type)} · ${x.min} dk${x.rpe ? " · zorluk " + x.rpe : ""}<div class="meta">${x.day}</div></div><button class="btn ghost s" data-act="trdel" data-id="${id}">Sil</button></div>`).join("") || '<div class="meta">Kayıt yok.</div>'));
+};
+tools.rooms = () => {
+  if (roomOpen && roomsData[roomOpen]) { const r = roomsData[roomOpen]; return padBox(backBtn("rooms") + `<h3>${esc(r.icon || "💬")} ${esc(r.name)}</h3><div id="rmMsgs" style="max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:8px;margin:8px 0"></div>` + (isGuest ? "" : '<form id="rmForm" class="cform"><input class="f" id="rmText" maxlength="200" placeholder="Mesaj yaz…" autocomplete="off"><button class="btn">Gönder</button></form>')); }
+  const l = Object.entries(roomsData);
+  return l.length ? l.map(([id, r]) => `<div class="fx" data-act="room" data-id="${id}" style="cursor:pointer"><div class="d" style="font-size:26px">${esc(r.icon || "💬")}</div><div style="flex:1"><b>${esc(r.name)}</b><div class="meta">${esc(r.desc || "")}</div></div></div>`).join("") : EMPTY;
+};
+function paintRoom() {
+  const el = $("#rmMsgs"); if (!el) return; const l = Object.values(roomMsgs).filter(m => !myBlocks[m.uid]);
+  el.innerHTML = l.length ? l.map(m => `<div class="lc"><b>${esc(m.author)}</b> ${esc(m.text)}</div>`).join("") : '<div class="meta">İlk mesajı sen yaz.</div>'; el.scrollTop = 1e9;
+}
+tools.level = () => {
+  const x = xpTable(), myxp = (x[me.uid] || 0) + myStreak * 5, lv = lvOf(myxp), lo = 20 * (lv - 1) ** 2, hi = 20 * lv ** 2, board = Object.entries(x).sort((a, b) => b[1] - a[1]).slice(0, 15);
+  return padBox((isGuest ? "" : `<div class="live" style="margin-bottom:12px"><div style="font-size:24px"><b>Seviye ${lv}</b> · ${titleOf(lv)}</div><div class="meta">${myxp} / ${hi} XP</div><div class="lvbar"><i style="width:${Math.min(100, Math.round(100 * (myxp - lo) / (hi - lo)))}%"></i></div></div>`)
+    + '<div class="meta" style="margin-bottom:8px">XP: gönderi +10, beğeni +2, yorum +1, quiz puanı, antrenman +3, tahmin puanı ×3, günlük seri ×5</div>'
+    + (board.map(([u, p], i) => `<div class="fx" data-prof="${esc(u)}" style="cursor:pointer"><div class="d">${["🥇", "🥈", "🥉"][i] || i + 1}</div><div style="flex:1"><b>${esc(nameFor(u))}</b>${verifiedMap[u] ? " ✅" : ""}<div class="meta">Seviye ${lvOf(p)} · ${titleOf(lvOf(p))}</div></div><b>${p} XP</b></div>`).join("") || EMPTY));
+};
+tools.cmp = () => {
+  const a = PLAYERS[cmpA], b = PLAYERS[cmpB]; if (!a || !b) return padBox("Karşılaştırmak için en az iki oyuncu gerekli.");
+  const sa = statsData[nkey(a.name)] || {}, sb = statsData[nkey(b.name)] || {}, mv = i => Object.values(mvpData).filter(x => x === i).length;
+  const avg = p => { const v = []; Object.values(ratingsData).forEach(r => Object.values(r[nkey(p.name)] || {}).forEach(x => v.push(x))); return v.length ? +(v.reduce((s, x) => s + x, 0) / v.length).toFixed(1) : 0; };
+  const rows = [["Maç", sa.mac || 0, sb.mac || 0], ["Gol", sa.gol || 0, sb.gol || 0], ["Asist", sa.asist || 0, sb.asist || 0], ["Sarı kart", sa.sari || 0, sb.sari || 0], ["Kırmızı kart", sa.kirmizi || 0, sb.kirmizi || 0], ["MVP oyu", mv(cmpA), mv(cmpB)], ["Ort. puan", avg(a), avg(b)]];
+  const sel = (k, v) => `<select class="f" data-act="cmp" data-k="${k}" style="flex:1">${PLAYERS.map((p, i) => `<option value="${i}" ${i === v ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>`;
+  return padBox(`<div class="acts">${sel("a", cmpA)}${sel("b", cmpB)}</div><table class="tb" style="margin-top:12px">` + rows.map(([k, x, y]) => `<tr><td style="${x > y ? "color:var(--green);font-weight:800" : ""}">${x}</td><td style="text-align:center">${k}</td><td style="${y > x ? "color:var(--green);font-weight:800" : ""}">${y}</td></tr>`).join("") + "</table>");
+};
+tools.tactic = () => padBox('<canvas id="tcv" width="360" height="520"></canvas><div class="acts" style="margin-top:8px"><button class="btn s" data-act="tcm" data-v="move">✋ Taşı</button><button class="btn ghost s" data-act="tcm" data-v="pen">✏️ Çiz</button><button class="btn ghost s" data-act="tcclr">🧹 Çizgileri sil</button><button class="btn ghost s" data-act="tcrst">↺ Sıfırla</button><button class="btn ghost s" data-act="tcdl">⬇ PNG</button>' + (isGuest ? "" : '<button class="btn s" data-act="tcpost">📤 Gönderi olarak paylaş</button>') + '</div><div class="meta" style="margin-top:6px">Mavi: bizim takım (ilk 11 açıklandıysa o dizilişle gelir) · Kırmızı: rakip. Daireleri sürükle, "Çiz" ile hareket oku çiz.</div>');
+let tcItems = [], tcLines = [], tcMode = "move", tcDrag = null, tcCur = null;
+function tcInit() {
+  const names = lineupData.players && lineupData.players.length === 11 ? lineupData.players : PLAYERS.slice(0, 11).map(p => p.name);
+  const rows = [1, ...((lineupData.formation || "4-4-2").split("-").map(Number))], step = 330 / (rows.length - 1); let k = 0; tcItems = []; tcLines = []; tcMode = "move";
+  rows.forEach((n, ri) => { for (let j = 0; j < n; j++) tcItems.push({ x: 360 * (j + 1) / (n + 1), y: 480 - ri * step, t: ((names[k++] || "").split(" ").slice(-1)[0]) || "", c: "#1d6f9c" }); });
+  for (let j = 0; j < 11; j++) tcItems.push({ x: 24 + (j % 6) * 62, y: 28 + Math.floor(j / 6) * 38, t: "R" + (j + 1), c: "#e5586b" });
+}
+function tcDraw() {
+  const cv = $("#tcv"); if (!cv) return; const c = cv.getContext("2d");
+  c.fillStyle = "#1b7a4f"; c.fillRect(0, 0, 360, 520); c.strokeStyle = "rgba(255,255,255,.85)"; c.lineWidth = 2; c.strokeRect(10, 10, 340, 500);
+  c.beginPath(); c.moveTo(10, 260); c.lineTo(350, 260); c.stroke(); c.beginPath(); c.arc(180, 260, 40, 0, 7); c.stroke(); c.strokeRect(95, 10, 170, 70); c.strokeRect(95, 440, 170, 70);
+  tcLines.forEach(l => { c.strokeStyle = "#ffd84d"; c.lineWidth = 3; c.beginPath(); l.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.stroke(); });
+  tcItems.forEach(p => { c.fillStyle = p.c; c.beginPath(); c.arc(p.x, p.y, 16, 0, 7); c.fill(); c.fillStyle = "#fff"; c.font = "bold 10px sans-serif"; c.textAlign = "center"; c.fillText(p.t.slice(0, 7), p.x, p.y + 4); });
+}
+function tcBind() {
+  const cv = $("#tcv"); if (!cv) return; if (!tcItems.length) tcInit(); tcDraw();
+  const pt = e => { const r = cv.getBoundingClientRect(), s = 360 / r.width; return [(e.clientX - r.left) * s, (e.clientY - r.top) * s]; };
+  cv.onpointerdown = e => {
+    const [x, y] = pt(e); cv.setPointerCapture(e.pointerId);
+    const hit = tcMode === "move" ? [...tcItems].reverse().find(p => Math.hypot(p.x - x, p.y - y) < 20) : null;
+    if (hit) tcDrag = hit; else if (tcMode === "pen") { tcCur = [[x, y]]; tcLines.push(tcCur); }
+  };
+  cv.onpointermove = e => { const [x, y] = pt(e); if (tcDrag) { tcDrag.x = x; tcDrag.y = y; tcDraw(); } else if (tcCur) { tcCur.push([x, y]); tcDraw(); } };
+  cv.onpointerup = () => { tcDrag = null; tcCur = null; };
+}
+function renderHub() {
+  const el = $("#hubBody"); if (!el || !me || $("#hub").classList.contains("hide")) return;
+  if (hubTool === "tactic" && $("#tcv")) return;
+  if (hubTool === "rooms" && roomOpen && $("#rmMsgs")) return;
+  if (!hubTool) { el.innerHTML = '<div class="hubg">' + HUB.map(([k, i, n]) => `<button class="hubc" data-tool="${k}"><b>${i}</b>${n}</button>`).join("") + "</div>"; return; }
+  el.innerHTML = `<div style="padding:10px 18px 0">${backBtn("")}</div>` + tools[hubTool]();
+  if (hubTool === "tactic") tcBind();
+  if (hubTool === "rooms" && roomOpen) paintRoom();
+}
+function leaveRoom() { roomUnsub?.(); roomUnsub = null; roomOpen = ""; roomMsgs = {}; }
+$("#hubBody").addEventListener("click", async e => {
+  const tl = e.target.closest("[data-tool]");
+  if (tl) { hubTool = tl.dataset.tool; newsOpen = matchOpen = ""; leaveRoom(); quizFb = ""; if (hubTool === "tactic") tcInit(); renderHub(); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  const act = a.dataset.act, id = a.dataset.id;
+  try {
+    if (act === "news") { newsOpen = id; renderHub(); }
+    if (act === "match") { matchOpen = id; renderHub(); }
+    if (act === "rsvp") { if (isGuest) return alert("Katılım bildirmek için hesap oluştur."); await set(dref(db, `rsvp/${id}/${me.uid}`), a.dataset.v); }
+    if (act === "quiz") {
+      if (isGuest) return alert("Yarışmaya katılmak için hesap oluştur.");
+      const q = quizData[id], ok = +a.dataset.i === q.ans;
+      quizFb = ok ? "✅ Doğru! +10 puan" : "❌ Yanlış. Doğrusu: " + esc(q.opts[q.ans]);
+      await update(dref(db, "quizscores/" + me.uid), { ["answered/" + id]: true });
+      if (ok) await runTransaction(dref(db, `quizscores/${me.uid}/pts`), v => (v || 0) + 10);
+      renderHub();
+    }
+    if (act === "trdel") await remove(dref(db, `train/${me.uid}/${id}`));
+    if (act === "room") {
+      roomOpen = id; roomMsgs = {}; roomUnsub?.();
+      roomUnsub = onValue(query(dref(db, "roomchat/" + id), limitToLast(80)), s => { roomMsgs = s.val() || {}; paintRoom(); });
+      renderHub();
+    }
+    if (act === "tcm") { tcMode = a.dataset.v; document.querySelectorAll('[data-act="tcm"]').forEach(b => b.classList.toggle("ghost", b !== a)); }
+    if (act === "tcclr") { tcLines = []; tcDraw(); }
+    if (act === "tcrst") { tcInit(); tcDraw(); }
+    if (act === "tcdl") { const l = document.createElement("a"); l.href = $("#tcv").toDataURL("image/png"); l.download = "taktik.png"; l.click(); }
+    if (act === "tcpost") {
+      if (isMuted()) return; const title = prompt("Taktik için kısa bir not yaz:", "Maç planı"); if (title === null) return;
+      const mr = push(dref(db, "media")); await set(mr, { uid: me.uid, data: $("#tcv").toDataURL("image/jpeg", 0.8) });
+      await push(dref(db, "posts"), { uid: me.uid, author: nameOf(me), text: "📐 Taktik: " + title.slice(0, 200), videoUrl: "", mediaRef: mr.key, mediaType: "image", cat: "Antrenman", createdAt: serverTimestamp() });
+      alert("Taktiğin ana sayfada paylaşıldı.");
+    }
+  } catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); }
+});
+$("#hubBody").addEventListener("change", e => {
+  const s = e.target.closest('[data-act="cmp"]'); if (!s) return;
+  if (s.dataset.k === "a") cmpA = +s.value; else cmpB = +s.value; renderHub();
+});
+document.addEventListener("submit", async e => {
+  if (e.target.id === "trForm") {
+    e.preventDefault(); const mn = parseInt($("#trM").value, 10), rp = parseInt($("#trR").value, 10); if (!mn) return;
+    try { await push(dref(db, "train/" + me.uid), { type: $("#trT").value, min: mn, ...(rp ? { rpe: Math.min(10, rp) } : {}), day: todayStr(), at: serverTimestamp() }); } catch (err) { alert("Kaydedilemedi: " + (err.code || err.message)); }
+  }
+  if (e.target.id === "rmForm") {
+    e.preventDefault(); const x = $("#rmText").value.trim(); if (!x || isMuted()) return; if (badWord(x)) return alert("Mesajında yasaklı bir kelime var.");
+    $("#rmText").value = "";
+    try { await push(dref(db, "roomchat/" + roomOpen), { uid: me.uid, author: nameOf(me), text: x, at: serverTimestamp() }); } catch (err) { alert("Gönderilemedi: " + (err.code || err.message)); }
+  }
+});
+async function openProfile(uid) {
+  const xp = (xpTable()[uid] || 0) + (me && uid === me.uid ? myStreak * 5 : 0), lv = lvOf(xp), my = allDocs.filter(d => d.data().uid === uid), nm = nameFor(uid);
+  $("#pbox").innerHTML = `<div class="av" style="width:90px;height:90px;font-size:36px;margin:0 auto">${esc(nm[0])}</div><h2>${esc(nm)} ${verifiedMap[uid] ? "✅" : ""}</h2><div class="meta">Seviye ${lv} · ${titleOf(lv)} · ${xp} XP</div><div id="pbio" class="meta"></div>`
+    + `<div>📝 ${my.length} gönderi · ❤ ${my.reduce((n, d) => n + d.data().likes.length, 0)} beğeni</div>`
+    + (!me || uid === me.uid || isGuest ? "" : `<div class="acts" style="justify-content:center"><button class="btn s" data-pmsg="${esc(uid)}">💬 Mesaj</button><button class="btn ghost s" data-pblk="${esc(uid)}" data-on="${myBlocks[uid] ? 1 : 0}">${myBlocks[uid] ? "Engeli kaldır" : "⛔ Engelle"}</button></div>`) + '<button class="btn" id="pclose">Kapat</button>';
+  $("#pmodal").classList.remove("hide");
+  get(dref(db, "users/" + uid + "/bio")).then(s => { if (s.val() && $("#pbio")) $("#pbio").textContent = s.val(); }).catch(() => {});
+}
+document.addEventListener("click", e => {
+  const pf = e.target.closest("[data-prof]"); if (pf) { openProfile(pf.dataset.prof); return; }
+  if (e.target.closest("[data-pmsg],[data-pblk]")) $("#pmodal").classList.add("hide");
 });
 </script>
 </body>
