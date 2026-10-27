@@ -89,6 +89,7 @@ dialog form{display:grid;gap:10px}
       <button class="btn g" data-t="comments">💬 Yorumlar</button>
       <button class="btn g" data-t="match">⚽ Maçlar</button>
       <button class="btn g" data-t="lig">🏆 Lig & İstatistik</button>
+      <button class="btn g" data-t="tools">🧩 Araçlar</button>
       <button class="btn g" data-t="reports">🚩 Şikayetler</button>
       <button class="btn g" data-t="bans">⛔ Yasaklar</button>
       <button class="btn g" data-t="mods" data-patron>🛡️ Moderatörler</button>
@@ -124,6 +125,25 @@ dialog form{display:grid;gap:10px}
     </section>
     <section id="t-stories" class="hide"><button class="btn g s" id="cleanSt" style="margin-top:12px">Süresi dolan hikayeleri temizle</button><div class="thumbs" id="sl"></div></section>
     <section id="t-comments" class="hide"><input class="f" id="cs" placeholder="Yorum veya kişi ara" style="margin-top:12px"><div id="cl"></div></section>
+    <section id="t-tools" class="hide">
+      <div class="box" style="margin-top:12px"><b>📰 Haber yayınla</b>
+        <input class="f" id="ntt" maxlength="100" placeholder="Başlık"><textarea class="f" id="nbd" rows="5" maxlength="2000" placeholder="Haber metni"></textarea>
+        <button class="btn" id="nAdd" style="justify-self:start">Yayınla</button><div id="nwl"></div></div>
+      <div class="box" style="margin-top:12px"><b>🧠 Bilgi yarışması sorusu</b>
+        <input class="f" id="qzq" maxlength="160" placeholder="Soru">
+        <input class="f" id="qzo0" placeholder="A şıkkı"><input class="f" id="qzo1" placeholder="B şıkkı"><input class="f" id="qzo2" placeholder="C şıkkı"><input class="f" id="qzo3" placeholder="D şıkkı">
+        <select class="f" id="qzc"><option value="0">Doğru: A</option><option value="1">Doğru: B</option><option value="2">Doğru: C</option><option value="3">Doğru: D</option></select>
+        <button class="btn" id="qAdd" style="justify-self:start">Soruyu ekle</button><div id="qzl"></div></div>
+      <div class="box" style="margin-top:12px"><b>💬 Sohbet odaları</b>
+        <input class="f" id="rmn" maxlength="40" placeholder="Oda adı (örn. Taraftar odası)"><input class="f" id="rmi" maxlength="4" placeholder="Simge (emoji)"><input class="f" id="rmd" maxlength="80" placeholder="Açıklama">
+        <button class="btn" id="rAdd" style="justify-self:start">Oda aç</button><div id="rml"></div></div>
+      <div class="box" style="margin-top:12px"><b>📋 Maç olayları ve katılım listesi</b>
+        <select class="f" id="evm"></select>
+        <div class="acts"><input class="f" id="evmin" type="number" min="0" max="130" placeholder="Dakika" style="width:100px">
+          <select class="f" id="evt" style="width:auto"><option value="gol">⚽ Gol</option><option value="asist">🅰 Asist</option><option value="sari">🟨 Sarı kart</option><option value="kirmizi">🟥 Kırmızı kart</option><option value="degisiklik">🔄 Değişiklik</option></select></div>
+        <select class="f" id="evp"></select><select class="f" id="eva"></select>
+        <button class="btn" id="evAdd" style="justify-self:start">Olay ekle</button><div id="evb"></div></div>
+    </section>
     <section id="t-lig" class="hide">
       <div class="box" style="margin-top:12px"><b>📊 Puan durumu</b>
         <div class="acts"><input class="f" id="tn" placeholder="Takım adı (örn. Orkide)" style="flex:1"><button class="btn" id="tAdd">Takım ekle</button></div>
@@ -195,6 +215,12 @@ dialog form{display:grid;gap:10px}
         <button class="btn g s" id="slowSave" style="justify-self:start">Yavaş modu kaydet</button>
         <textarea class="f" id="bw" rows="3" placeholder="Yasaklı kelimeler (virgülle ayır: kelime1, kelime2)"></textarea>
         <button class="btn g s" id="bwSave" style="justify-self:start">Kelime listesini kaydet</button>
+        <b style="margin-top:10px;color:var(--red)">⚠️ Sezon sıfırlama (geri alınamaz)</b>
+        <label class="sw"><input type="checkbox" data-rs="stats"> Oyuncu istatistikleri</label><label class="sw"><input type="checkbox" data-rs="table"> Puan durumu</label>
+        <label class="sw"><input type="checkbox" data-rs="mvp"> Maçın adamı oyları</label><label class="sw"><input type="checkbox" data-rs="predictions"> Tahminler</label>
+        <label class="sw"><input type="checkbox" data-rs="ratings"> Oyuncu puanları</label><label class="sw"><input type="checkbox" data-rs="awards"> Ödüller</label>
+        <label class="sw"><input type="checkbox" data-rs="lineup"> İlk 11</label><label class="sw"><input type="checkbox" data-rs="livechat"> Canlı sohbet</label>
+        <button class="btn r s" id="resetBtn" style="justify-self:start">Seçilenleri sıfırla</button>
       </div>
     </section>
     <section id="t-bans" class="hide"><button class="btn g s" id="cleanBans" data-patron style="margin-top:12px">Süresi dolan yasakları temizle</button><div id="bl"></div></section>
@@ -203,7 +229,7 @@ dialog form{display:grid;gap:10px}
         <div id="annNow" class="meta"></div>
         <textarea class="f" id="at" maxlength="200" rows="3" placeholder="Sitede herkese görünecek duyuru"></textarea>
         <select class="f" id="ad"><option value="0">Süresiz</option><option value="1">1 gün</option><option value="3">3 gün</option><option value="7">7 gün</option></select>
-        <div class="acts"><button class="btn" id="annSave">Yayınla</button><button class="btn g" id="annDel">Duyuruyu kaldır</button><button class="btn a" id="massWarn">⚠️ Herkese uyarı gönder</button></div>
+        <div class="acts"><button class="btn" id="annSave">Yayınla</button><button class="btn g" id="annDel">Duyuruyu kaldır</button><select class="f" id="wseg" style="width:auto"><option value="all">Herkes</option><option value="online">Çevrimiçi olanlar</option><option value="noposts">Hiç paylaşmayanlar</option><option value="mods">Moderatörler</option><option value="banned">Yasaklılar</option></select><button class="btn a" id="massWarn">⚠️ Seçilene uyarı gönder</button></div>
       </div>
     </section>
     <section id="t-gh" class="hide">
@@ -264,7 +290,7 @@ const csvOf = rows => "\ufeff" + rows.map(r => r.map(x => '"' + String(x ?? "").
 const dl = (name, text, type) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1500); };
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
 let me = null, myName = "", started = false, banTarget = null;
-let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {}, matchesA = {}, liveA = {}, mvpA = {}, statsA = {}, tableA = {}, verifiedA = {}, playersA = [], awardsA = {}, qaA = {}, lineupA = {}, lineupFilled = false;
+let users = {}, posts = {}, stories = {}, bans = {}, logs = {}, ann = null, comments = {}, settings = {}, modreq = {}, mods = {}, reports = {}, notes = {}, role = null, perms = {}, presence = {}, matchesA = {}, liveA = {}, mvpA = {}, statsA = {}, tableA = {}, verifiedA = {}, playersA = [], awardsA = {}, qaA = {}, lineupA = {}, lineupFilled = false, newsA = {}, quizA = {}, roomsA = {}, rsvpA = {};
 const sel = new Set();
 const chatId = (a, b) => [a, b].sort().join("_");
 const can = p => role === "patron" || perms[p] === true;
@@ -320,7 +346,7 @@ function start() {
   w("users", v => users = v); w("posts", v => posts = v); w("stories", v => stories = v);
   w("bans", v => bans = v);
   if (role === "patron") { w("adminlog", v => logs = v); w("mods", v => mods = v); w("modrequests", v => modreq = v); }
-  w("reports", v => reports = v); w("presence", v => presence = v); w("matches", v => matchesA = v); w("live", v => liveA = v); w("mvp", v => mvpA = v); w("stats", v => statsA = v); w("table", v => tableA = v); w("verified", v => verifiedA = v); w("awards", v => awardsA = v); w("qa", v => qaA = v); w("lineup", v => lineupA = v);
+  w("reports", v => reports = v); w("presence", v => presence = v); w("matches", v => matchesA = v); w("live", v => liveA = v); w("mvp", v => mvpA = v); w("stats", v => statsA = v); w("table", v => tableA = v); w("verified", v => verifiedA = v); w("awards", v => awardsA = v); w("qa", v => qaA = v); w("lineup", v => lineupA = v); w("news", v => newsA = v); w("quiz", v => quizA = v); w("rooms", v => roomsA = v); w("rsvp", v => rsvpA = v);
   fetch("index.html").then(r => r.text()).then(x => { const b = (x.split("const PLAYERS = [")[1] || "").split("];")[0]; playersA = [...b.matchAll(/name: "([^"]+)"/g)].map(m => m[1]).filter(n => !/Adı$/.test(n)); render(); }).catch(() => {}); w("notes", v => notes = v); w("comments", v => comments = v); w("settings", v => settings = v);
   onValue(dref(db, "announcement"), s => { ann = s.val(); render(); });
   $("#modlink").value = location.origin + location.pathname + "?mod=1"; $("#ghDir").textContent = GH_DIR;
@@ -388,9 +414,13 @@ function render() {
   const onl = Object.entries(presence).filter(([, v]) => v).map(([id]) => nameOf(id));
   const act = {}; Object.values(logs).forEach(l => act[l.by] = (act[l.by] || 0) + 1);
   const perU = days.map(d => Object.values(users).filter(u => u.since >= d && u.since < d + dayMs).length);
+  const perH = [...Array(24)].fill(0); Object.values(posts).forEach(p => { if (p.createdAt) perH[new Date(p.createdAt).getHours()]++; });
+  const mxH = Math.max(1, ...perH);
+  const hourHtml = `<div class="bars" style="height:110px;gap:3px">${perH.map((n, h) => `<div class="bar" style="height:${Math.max(3, n / mxH * 90)}px"><i style="font-size:10px">${n || ""}</i><small style="font-size:9px">${h % 3 === 0 ? h : ""}</small></div>`).join("")}</div>`;
   const barsHtml = arr => { const m = Math.max(1, ...arr); return `<div class="bars">${arr.map((n, i) => `<div class="bar" style="height:${Math.max(3, n / m * 100)}px"><i>${n}</i><small>${new Date(days[i]).toLocaleDateString("tr-TR", { weekday: "short" })}</small></div>`).join("")}</div>`; };
   $("#an").innerHTML = `<div class="box" style="margin-top:12px"><b>📈 Son 7 gün gönderi sayısı</b><div class="bars">${per.map((n, i) => `<div class="bar" style="height:${Math.max(3, n / mx * 100)}px"><i>${n}</i><small>${new Date(days[i]).toLocaleDateString("tr-TR", { weekday: "short" })}</small></div>`).join("")}</div></div>
     <div class="box" style="margin-top:10px"><b>👥 Son 7 gün yeni kullanıcı</b>${barsHtml(perU)}</div>
+    <div class="box" style="margin-top:10px"><b>🕒 Saate göre gönderi (hangi saatte daha aktif?)</b>${hourHtml}</div>
     <div class="grid2">
       <div class="box"><b>🏆 En aktif kullanıcılar</b>${li(tp(Object.entries(byU)), ([id, n]) => `<div class="meta">${esc(nameOf(id))} — ${n} gönderi</div>`)}</div>
       <div class="box"><b>❤️ En çok beğenilen gönderiler</b>${li(tp(Object.entries(posts).map(([id, p]) => [id, Object.keys(p.likes || {}).length])).filter(r => r[1] > 0), ([id, n]) => `<div class="meta">${esc(posts[id].author)}: ${snip(id)} — ${n} ❤</div>`)}</div>
@@ -416,6 +446,15 @@ function render() {
   const qs = Object.entries(qaA).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
   $("#ql").innerHTML = qs.length ? qs.map(([id, q]) => `<div class="item"><div><b>${esc(q.q)}</b> <span class="meta">${esc(q.author)} · ${fmt(q.at)}</span>${q.a ? `<div class="meta">💬 ${esc(q.a)} (${esc(q.by || "")})</div>` : '<div class="meta" style="color:var(--amber)">Yanıt bekliyor</div>'}</div>
     <div class="acts"><button class="btn s" data-a="qans" data-u="${esc(id)}">${q.a ? "Yanıtı düzenle" : "Yanıtla"}</button><button class="btn r s" data-a="qdel" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Soru yok.</div>';
+  const nws = Object.entries(newsA).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  $("#nwl").innerHTML = nws.map(([id, n]) => `<div class="item"><div><b>${esc(n.title)}</b> <span class="meta">${fmt(n.at)}</span></div><div class="acts"><button class="btn r s" data-a="ndel" data-u="${esc(id)}">Sil</button></div></div>`).join("") || '<div class="meta">Haber yok.</div>';
+  $("#qzl").innerHTML = Object.entries(quizA).map(([id, q]) => `<div class="item"><div><b>${esc(q.q)}</b><div class="meta">Doğru: ${esc((q.opts || [])[q.ans] || "")}</div></div><div class="acts"><button class="btn r s" data-a="qzdel" data-u="${esc(id)}">Sil</button></div></div>`).join("") || '<div class="meta">Soru yok.</div>';
+  $("#rml").innerHTML = Object.entries(roomsA).map(([id, r]) => `<div class="item"><div>${esc(r.icon || "💬")} <b>${esc(r.name)}</b></div><div class="acts"><button class="btn g s" data-a="rclr" data-u="${esc(id)}">Mesajları temizle</button><button class="btn r s" data-a="rdel2" data-u="${esc(id)}">Sil</button></div></div>`).join("") || '<div class="meta">Oda yok.</div>';
+  if ($("#evm").options.length !== Object.keys(matchesA).length) { const cur = $("#evm").value; $("#evm").innerHTML = Object.entries(matchesA).sort((a, b) => b[1].at - a[1].at).map(([id, m]) => `<option value="${id}">${m.type === "antrenman" ? "Antrenman" : esc(m.opp)} · ${fmt(m.at)}</option>`).join(""); if (cur) $("#evm").value = cur; }
+  if ($("#evp").options.length !== playersA.length + 1) { const o = '<option value="">Oyuncu seç</option>' + playersA.map(n => `<option>${esc(n)}</option>`).join(""); $("#evp").innerHTML = o; $("#eva").innerHTML = o.replace("Oyuncu seç", "Asist yapan (isteğe bağlı)"); }
+  const emid = $("#evm").value, emm = matchesA[emid];
+  $("#evb").innerHTML = emm ? (Object.entries(emm.events || {}).sort((a, b) => (a[1].min || 0) - (b[1].min || 0)).map(([eid, e]) => `<div class="item"><div>${e.min}' ${esc(e.type)} — <b>${esc(e.player || "")}</b>${e.assist ? " (asist: " + esc(e.assist) + ")" : ""}</div><div class="acts"><button class="btn r s" data-a="evdel" data-u="${esc(emid)}" data-c="${esc(eid)}">Sil</button></div></div>`).join("") || '<div class="meta">Henüz olay yok.</div>')
+    + (() => { const rs = rsvpA[emid] || {}, g = { yes: [], maybe: [], no: [] }; Object.entries(rs).forEach(([u, v]) => (g[v] || []).push(nameOf(u))); return `<div class="meta" style="margin-top:8px">✅ Geliyor (${g.yes.length}): ${g.yes.map(esc).join(", ") || "-"}<br>🤔 Belki (${g.maybe.length}): ${g.maybe.map(esc).join(", ") || "-"}<br>❌ Gelmiyor (${g.no.length}): ${g.no.map(esc).join(", ") || "-"}</div>`; })() : "";
   const mls = Object.entries(matchesA).sort((a, b) => b[1].at - a[1].at);
   $("#ml2").innerHTML = mls.length ? mls.map(([id, m]) => `<div class="item"><div><b>${m.type === "antrenman" ? "🏋️ Antrenman" : (m.home ? "Orkide – " + esc(m.opp) : esc(m.opp) + " – Orkide")}</b> <span class="meta">${fmt(m.at)} · ${esc(m.place || "")}</span>${m.us != null ? `<div class="meta">Skor: ${m.home ? m.us + " - " + m.them : m.them + " - " + m.us}</div>` : ""}</div>
     <div class="acts">${m.type !== "antrenman" ? `<button class="btn g s" data-a="mscore" data-u="${esc(id)}">Skor gir</button>` : ""}<button class="btn r s" data-a="mdel" data-u="${esc(id)}">Sil</button></div></div>`).join("") : '<div class="empty">Fikstür boş.</div>';
@@ -453,7 +492,7 @@ $("#tabs").onclick = e => {
   const b = e.target.closest("[data-t]"); if (!b) return;
   if (b.dataset.t === "gh") ghList();
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
-  ["users", "an", "posts", "stories", "comments", "reports", "match", "lig", "bans", "mods", "ann", "set", "gh", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
+  ["users", "an", "posts", "stories", "comments", "reports", "match", "lig", "tools", "bans", "mods", "ann", "set", "gh", "log"].forEach(t => $("#t-" + t).classList.toggle("hide", t !== b.dataset.t));
 };
 
 /* ---- İşlemler ---- */
@@ -540,6 +579,11 @@ document.addEventListener("click", async e => {
       dl("kullanicilar.csv", csvOf([["Ad", "UID", "Gönderi", "Durum", "Çevrimiçi"], ...Object.entries(known()).map(([uid, u]) => [u.name || "", uid, cnt[uid] || 0, live(bans[uid]) ? (bans[uid].type === "mute" ? "Susturulmuş" : "Yasaklı") : "Normal", presence[uid] ? "evet" : "hayır"])]), "text/csv");
     }
     if (a === "backup") dl("orkide-yedek-" + new Date().toISOString().slice(0, 10) + ".json", JSON.stringify({ exportedAt: Date.now(), users, posts, stories, comments, bans, settings, mods, reports, notes }, null, 2), "application/json");
+    if (a === "ndel" && confirm("Haber silinsin mi?")) { await remove(dref(db, "news/" + id)); log("Haber silindi", newsA[id]?.title || id); }
+    if (a === "qzdel" && confirm("Soru silinsin mi?")) { await remove(dref(db, "quiz/" + id)); log("Quiz sorusu silindi", quizA[id]?.q || id); }
+    if (a === "rdel2" && confirm("Oda ve mesajları silinsin mi?")) { await remove(dref(db, "rooms/" + id)); await remove(dref(db, "roomchat/" + id)); log("Oda silindi", roomsA[id]?.name || id); }
+    if (a === "rclr" && confirm("Odanın mesajları temizlensin mi?")) { await remove(dref(db, "roomchat/" + id)); log("Oda mesajları temizlendi", roomsA[id]?.name || id); }
+    if (a === "evdel") { await remove(dref(db, `matches/${id}/events/${cid}`)); log("Maç olayı silindi", matchesA[id]?.opp || id); }
     if (a === "qans") { const t = prompt("Yanıtın:", qaA[id]?.a || ""); if (t === null) return; await update(dref(db, "qa/" + id), { a: t.trim().slice(0, 300), by: myName }); log("Soru yanıtlandı", (qaA[id]?.q || "").slice(0, 40)); }
     if (a === "qdel" && confirm("Soru silinsin mi?")) { await remove(dref(db, "qa/" + id)); log("Soru silindi", (qaA[id]?.q || "").slice(0, 40)); }
     if (a === "adel" && confirm("Ödül silinsin mi?")) { await remove(dref(db, "awards/" + id)); log("Ödül silindi", awardsA[id]?.player || id); }
@@ -633,7 +677,7 @@ $("#cleanBans").onclick = async () => {
 };
 $("#massWarn").onclick = async () => {
   const t = prompt("Tüm kullanıcılara gidecek uyarı mesajı:"); if (!t || !t.trim()) return;
-  const ids = Object.keys(known()); if (!confirm(ids.length + " kullanıcıya uyarı gönderilsin mi?")) return;
+  const ids = segIds($("#wseg").value); if (!confirm(ids.length + " kullanıcıya uyarı gönderilsin mi?")) return;
   await Promise.all(ids.map(id => push(dref(db, "warnings/" + id), { text: t.trim(), by: myName, at: serverTimestamp() })));
   log("Toplu uyarı (" + ids.length + ")", t.trim().slice(0, 40)); alert("Gönderildi.");
 };
@@ -672,6 +716,34 @@ $("#ghUp").onclick = async () => {
     $("#ghMsg").textContent = "Yüklendi ✓ Sitede görünmesi 1-2 dakika sürer."; log("Depoya dosya yüklendi", f.name); $("#ghFile").value = ""; ghList();
   } catch (err) { $("#ghMsg").textContent = "Yüklenemedi: " + err.message; }
 };
+const segIds = sg => {
+  const cnt = {}; Object.values(posts).forEach(p => cnt[p.uid] = (cnt[p.uid] || 0) + 1);
+  return Object.keys(known()).filter(id => sg === "all" || (sg === "online" && presence[id]) || (sg === "noposts" && !cnt[id]) || (sg === "mods" && mods[id]) || (sg === "banned" && live(bans[id])));
+};
+const guard = fn => async () => { try { await fn(); } catch (err) { alert("İşlem başarısız: " + (err.code || err.message)); } };
+$("#nAdd").onclick = guard(async () => {
+  const t = $("#ntt").value.trim(), b = $("#nbd").value.trim(); if (!t || !b) return alert("Başlık ve metin yaz.");
+  await push(dref(db, "news"), { title: t, body: b, by: myName, at: serverTimestamp() }); log("Haber yayınlandı", t); $("#ntt").value = ""; $("#nbd").value = "";
+});
+$("#qAdd").onclick = guard(async () => {
+  const q = $("#qzq").value.trim(), o = [0, 1, 2, 3].map(i => $("#qzo" + i).value.trim()); if (!q || o.some(x => !x)) return alert("Soruyu ve dört şıkkı yaz.");
+  await push(dref(db, "quiz"), { q, opts: o, ans: +$("#qzc").value, at: serverTimestamp() }); log("Quiz sorusu eklendi", q.slice(0, 40));
+  $("#qzq").value = ""; [0, 1, 2, 3].forEach(i => $("#qzo" + i).value = "");
+});
+$("#rAdd").onclick = guard(async () => {
+  const n = $("#rmn").value.trim(); if (!n) return alert("Oda adını yaz.");
+  await push(dref(db, "rooms"), { name: n, icon: $("#rmi").value.trim() || "💬", desc: $("#rmd").value.trim() }); log("Oda açıldı", n); $("#rmn").value = ""; $("#rmi").value = ""; $("#rmd").value = "";
+});
+$("#evAdd").onclick = guard(async () => {
+  const mid = $("#evm").value, pl = $("#evp").value, min = parseInt($("#evmin").value, 10); if (!mid || !pl || isNaN(min)) return alert("Maçı, dakikayı ve oyuncuyu seç.");
+  await push(dref(db, `matches/${mid}/events`), { min, type: $("#evt").value, player: pl, assist: $("#eva").value || "" }); log("Maç olayı eklendi: " + $("#evt").value, pl); $("#evmin").value = "";
+});
+$("#evm").onchange = render;
+$("#resetBtn").onclick = guard(async () => {
+  const ks = [...document.querySelectorAll("[data-rs]:checked")].map(x => x.dataset.rs); if (!ks.length) return alert("Önce sıfırlanacakları seç.");
+  if (prompt("Bu işlem geri alınamaz: " + ks.join(", ") + "\nOnaylamak için SIFIRLA yaz:") !== "SIFIRLA") return;
+  await Promise.all(ks.map(k => remove(dref(db, k)))); log("Sezon sıfırlama: " + ks.join(","), "site"); alert("Sıfırlandı.");
+});
 $("#lSave").onclick = async () => {
   const pl = [...document.querySelectorAll("[data-lp]")].map(x => x.value);
   if (pl.some(x => !x)) return alert("11 oyuncunun hepsini seç."); if (new Set(pl).size !== 11) return alert("Aynı oyuncu iki kez seçilmiş.");
