@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem("orkide_theme")||"dark"}catch(e){}</script>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <style>
 :root{--bg:#06161f;--panel:#0b2330;--panel2:#0f2f40;--line:#17435a;--text:#e6f3f1;--mute:#7fa3ab;--green:#22b98a;--green2:#16906a;--blue:#1d6f9c;--red:#e5586b}
 *{box-sizing:border-box;margin:0}
@@ -160,6 +161,7 @@ aside{display:none}main{border:0}
     <input class="f hide" id="uname" placeholder="Kullanıcı adı" maxlength="24" autocomplete="username">
     <input class="f" id="email" type="text" placeholder="Kullanıcı adı veya e-posta" autocomplete="username">
     <input class="f" id="pass" type="password" placeholder="Şifre (en az 6 karakter)" required minlength="6" autocomplete="current-password">
+    <div class="g-recaptcha" data-sitekey="6Ld79AMuAAAAAA-e6PzblC9fO4emfKh23zemQKMH"></div>
     <div class="err" id="err"></div>
     <button class="btn" id="authBtn">Giriş yap</button>
     <button class="btn ghost" type="button" id="toggle">Hesabın yok mu? Kayıt ol</button>
